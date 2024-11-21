@@ -14,7 +14,7 @@ import {
   Paper,
 } from "@mui/material";
 
-function Report() {
+function DueCustomers() {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
 
@@ -139,7 +139,7 @@ function Report() {
     <Box sx={{ padding: 4, maxWidth: "100%", margin: "auto" }}>
       {/* Header */}
       <Typography variant="h4" fontWeight="bold" textAlign="center" mb={3}>
-        Report
+        Due Customers
       </Typography>
 
       {/* Form */}
@@ -266,4 +266,4 @@ function Report() {
   );
 }
 
-export default Report;
+export default DueCustomers;

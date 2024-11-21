@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react'; // Import useEffect
-import { Box, CssBaseline, Drawer, List, ListItem, Button, ListItemIcon, ListItemText, Typography, IconButton } from '@mui/material';
-import HomeIcon from '@mui/icons-material/Home';
+import {
+    Box, CssBaseline, Drawer, Menu,
+    MenuItem,
+    Avatar, List, ListItem, Button, ListItemIcon, ListItemText, Typography, IconButton
+} from '@mui/material';
+import SettingsIcon from "@mui/icons-material/Settings";
+import SearchIcon from "@mui/icons-material/Search";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import PeopleIcon from '@mui/icons-material/People';
-import SettingsIcon from '@mui/icons-material/Settings';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import MenuIcon from '@mui/icons-material/Menu'; // Import MenuIcon
 import { Outlet, Link, useLocation } from 'react-router-dom'; // Import useLocation
 import { logout } from '../store/actions/authActions';
 import { useDispatch, useSelector } from 'react-redux'; // Import useSelector
@@ -14,6 +18,8 @@ import BusinessIcon from '@mui/icons-material/Business';
 import Groups2 from '@mui/icons-material/Groups2';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import ReportIcon from '@mui/icons-material/Report';
+import MenuIcon from '@mui/icons-material/Menu';
+
 const drawerWidth = 240;
 
 function SidebarLayout() {
@@ -21,6 +27,7 @@ function SidebarLayout() {
     const [selectedIndex, setSelectedIndex] = useState(0); // State for selected tab
     const dispatch = useDispatch();
     const [drawerOpen, setDrawerOpen] = useState(false); // State for drawer open/close
+    const [anchorEl, setAnchorEl] = useState(null);
     const userRole = useSelector((state) => state.auth.user?.role); // Get user role from state
 
     const toggleDrawer = () => {
@@ -34,13 +41,16 @@ function SidebarLayout() {
         // auth.signOut();
     };
 
-
     const items = [
         { text: 'Dashboard', icon: <DashboardIcon fontSize="medium" />, path: '/', roles: ['admin', 'dealer', 'staff'] },
         { text: 'Connections', icon: <PeopleIcon fontSize="medium" />, path: '/customers', roles: ['admin', 'dealer', 'staff'] },
         { text: 'Dealers', icon: <BusinessIcon fontSize="medium" />, path: '/dealers', roles: ['admin'] },
         { text: 'Staff', icon: <Groups2 fontSize="medium" />, path: '/staff', roles: ['admin', 'dealer'] },
+        { text: 'ISP', icon: <Groups2 fontSize="medium" />, path: '/isp', roles: ['admin', 'dealer'] },
         { text: 'Reports', icon: <ReportIcon fontSize="medium" />, path: '/reports', roles: ['admin', 'dealer', 'staff'] },
+        { text: 'Slips', icon: <ReportIcon fontSize="medium" />, path: '/slips', roles: ['admin', 'dealer', 'staff'] },
+        { text: 'Due Customers', icon: <ReportIcon fontSize="medium" />, path: '/due-customers', roles: ['admin', 'dealer', 'staff'] },
+
     ];
 
     // Filter items based on user role
@@ -52,20 +62,28 @@ function SidebarLayout() {
         const activeIndex = filteredItems.findIndex(item =>
             item.path === currentPath ||
             (item.path === '/customers' && (currentPath === '/add-customer' || currentPath === '/customer-details' || currentPath === '/invoice' || currentPath.startsWith('/customer'))) ||
-            (item.path === '/staff' && (currentPath === '/create-staff' || currentPath === '/update-staff' || currentPath.startsWith('/staff'))) // Check for staff routes
+            (item.path === '/staff' && (currentPath === '/create-staff' || currentPath === '/update-staff' || currentPath.startsWith('/staff'))) || // Check for staff routes
+            (item.path === '/isp' && (currentPath === '/create-isp' || currentPath === '/update-staff' || currentPath.startsWith('/isp'))) // Check for staff routes
+
         );
         setSelectedIndex(activeIndex !== -1 ? activeIndex : 0); // Default to 0 if not found
     }, [location.pathname]); // Run effect when the pathname changes
+    const handleMenuOpen = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
 
     return (
-        <div style={{ display: 'flex',}}>
+        <div style={{ display: 'flex', }}>
             <Box sx={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignContent: "center",
                 background: colors.gradientBackground,
                 width: 60,
-                // height: '100vh'
             }}>
                 <IconButton onClick={toggleDrawer} sx={{ display: { xs: 'block', md: 'none', }, mt: 2, color: 'white' }}> {/* Change color to green */}
                     <MenuIcon />
@@ -188,23 +206,73 @@ function SidebarLayout() {
                             {window.location.pathname === '/not-authorized' ? 'Not Authorised' : filteredItems[selectedIndex]?.text || 'Home'}
                         </Typography>
                     </Box>
-                    <Box display="flex" alignItems="center">
+
+                    {/* User Info */}
+                    <Box display="flex" alignItems="center" sx={{ flexWrap: 'wrap', '& > *': { m: { xs: 0, md: 1 }, p: { xs: 0.3, md: 0.8 } } }}>
                         <Button
-                            variant="contained"
-                            onClick={handleLogout}
-                            sx={{ marginLeft: 1, backgroundColor: colors.primary, fontSize: { xs: 10, sm: 14 } }}
+                            variant="outlined"
+                            sx={{
+                                padding: "5px 10px",
+                                textTransform: "none",
+                                color: colors.primary,
+                                borderColor: colors.primary,
+                                "&:hover": {
+                                    borderColor: "#5438b3",
+                                },
+                            }}
+                            endIcon={<ArrowDropDownIcon />}
+                            onClick={handleMenuOpen}
                         >
-                            Logout
+                            <Avatar
+                                sx={{
+                                    width: 24,
+                                    height: 24,
+                                    fontSize: "0.8rem",
+                                    backgroundColor: "#e0e7ff",
+                                    color: colors.primary,
+                                    mr: 1
+                                }}
+                            >
+                                N
+                            </Avatar>
+                            <Typography variant="body2" color={colors.primary}>
+                                nasir
+                            </Typography>
                         </Button>
-                        <IconButton sx={{ ml: 1 }}><SettingsIcon /></IconButton>
-                        <IconButton sx={{ ml: 1 }}><NotificationsIcon /></IconButton>
+
+                        {/* Dropdown Menu */}
+                        <Menu
+                            anchorEl={anchorEl}
+                            open={Boolean(anchorEl)}
+                            onClose={handleMenuClose}
+                            PaperProps={{
+                                sx: {
+                                    mt: 1,
+                                    width: { xs: 100, sm: 180 },
+                                },
+                            }}
+                        >
+                            <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
+                            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                        </Menu>
+                        {/* Icons */}
+                        <IconButton sx={{ ml: 0.5 }}>
+                            <SettingsIcon sx={{ fontSize: { xs: '1.2rem', sm: '1.6rem' }, color: colors.primary }} />
+                        </IconButton>
+                        <IconButton>
+                            <SearchIcon sx={{ fontSize: { xs: '1.2rem', sm: '1.6rem' }, color: colors.primary }} />
+                        </IconButton>
+                        <IconButton>
+                            <NotificationsIcon sx={{ fontSize: { xs: '1.2rem', sm: '1.6rem' }, color: colors.primary }} />
+                        </IconButton>
+
                     </Box>
                 </Box>
                 <Box sx={{ backgroundColor: "#f3f6ff", padding: 2, }}>
                     <Outlet />
                 </Box>
             </Box>
-        </div>
+        </div >
     );
 }
 

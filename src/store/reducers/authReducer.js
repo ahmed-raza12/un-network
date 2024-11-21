@@ -17,7 +17,7 @@ const authReducer = (state = loadState(), action) => {
         isLoggedIn: true,
         user: action.payload,
       };
-      localStorage.setItem('authState', JSON.stringify(newState)); // Save to local storage
+      // localStorage.setItem('authState', JSON.stringify(newState)); // Save to local storage
       return newState;
     case 'LOGOUT':
       // Object.keys(localStorage).forEach(key => {

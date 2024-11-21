@@ -3,6 +3,7 @@ import { Box, Grid, TextField, Button, Typography } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import colors from '../colors';
 import { addStaff } from '../store/actions/staffActions'; // Import your action for adding staff
+import { TextFieldStyle } from './CreateISP';
 
 function CreateStaff() {
   const [firstName, setFirstName] = useState('');
@@ -37,6 +38,7 @@ function CreateStaff() {
         <Grid item xs={6} sx={{ mt: 2 }}>
           <Typography sx={{ color: colors.primary }}>First Name</Typography>
           <TextField
+            sx={TextFieldStyle}
             placeholder="John"
             fullWidth
             variant="outlined"
@@ -48,6 +50,7 @@ function CreateStaff() {
         <Grid item xs={6} sx={{ mt: 2 }}>
           <Typography sx={{ color: colors.primary }}>Last Name</Typography>
           <TextField
+            sx={TextFieldStyle}
             placeholder="Doe"
             fullWidth
             variant="outlined"
@@ -59,6 +62,7 @@ function CreateStaff() {
         <Grid item xs={6} sx={{ mt: 2 }}>
           <Typography sx={{ color: colors.primary }}>Phone Number</Typography>
           <TextField
+            sx={TextFieldStyle}
             placeholder="03001234567"
             fullWidth
             variant="outlined"
@@ -70,6 +74,7 @@ function CreateStaff() {
         <Grid item xs={6} sx={{ mt: 2 }}>
           <Typography sx={{ color: colors.primary }}>Username</Typography>
           <TextField
+            sx={TextFieldStyle}
             placeholder="Email"
             fullWidth
             variant="outlined"
@@ -81,6 +86,7 @@ function CreateStaff() {
         <Grid item xs={6} sx={{ mt: 2 }}>
           <Typography sx={{ color: colors.primary }}>Password</Typography>
           <TextField
+            sx={TextFieldStyle}
             type="password"
             placeholder="Password"
             fullWidth
@@ -93,6 +99,7 @@ function CreateStaff() {
         <Grid item xs={6} sx={{ mt: 2 }}>
           <Typography sx={{ color: colors.primary }}>Address</Typography>
           <TextField
+            sx={TextFieldStyle}
             placeholder="House No."
             fullWidth
             variant="outlined"
@@ -104,6 +111,7 @@ function CreateStaff() {
         <Grid item xs={6} sx={{ mt: 2 }}>
           <Typography sx={{ color: colors.primary }}>Designation</Typography>
           <TextField
+            sx={TextFieldStyle}
             placeholder="Designation"
             fullWidth
             variant="outlined"
@@ -113,7 +121,7 @@ function CreateStaff() {
           />
         </Grid>
       </Grid>
-      <Box display="flex" alignItems="center" mb={2}>
+      <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
         <Button
           variant="contained"
           //   color="primary"

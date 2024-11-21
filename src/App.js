@@ -6,7 +6,6 @@ import { firebaseConfig } from './firebase'; // Import your firebase config
 import Dashboard from './components/Dashboard';
 import Login from './components/Login';
 import { logout } from './store/actions/authActions';
-import { AppBar, Toolbar, Typography, Button, IconButton, Menu, Box } from '@mui/material';
 import SidebarLayout from './components/Sidebar';
 import Customers from './components/Customers';
 import AddCustomer from './components/AddCustomer';
@@ -20,6 +19,12 @@ import Invoice from './components/Invoice';
 import ProtectedRoute from './ProtectedRoute';
 import NotAuthorized from './components/NotAuthorized';
 import Report from './components/Report';
+import Slips from './components/Slips';
+import DueCustomers from './components/DueCustomers';
+import ISP from './components/ISP';
+import CreateISP from './components/CreateISP';
+import ISPDetails from './components/ISPDetails';
+
 // Initialize Firebase
 initializeApp(firebaseConfig);
 
@@ -87,6 +92,12 @@ const App = () => {
                 <Route path="/create-staff" element={<ProtectedRoute element={<CreateStaff />} allowedRoles={['admin', 'dealer']} />} />
                 <Route path="/update-staff" element={<ProtectedRoute element={<UpdateStaff />} allowedRoles={['admin', 'dealer']} />} />
                 <Route path="/reports" element={<ProtectedRoute element={<Report />} allowedRoles={['admin', 'dealer', 'staff']} />} />
+                <Route path="/slips" element={<ProtectedRoute element={<Slips />} allowedRoles={['admin', 'dealer', 'staff']} />} />
+                <Route path="/due-customers" element={<ProtectedRoute element={<DueCustomers />} allowedRoles={['admin', 'dealer', 'staff']} />} />
+                <Route path="/isp" element={<ProtectedRoute element={<ISP />} allowedRoles={['admin', 'dealer', 'staff']} />} />
+                <Route path="/create-isp" element={<ProtectedRoute element={<CreateISP />} allowedRoles={['admin', 'dealer', 'staff']} />} />
+                <Route path="/isp-details/:id" element={<ProtectedRoute element={<ISPDetails />} allowedRoles={['admin', 'dealer', 'staff']} />} />
+                
                 <Route path="/login" element={<Login />} />
                 <Route path="/not-authorized" element={<NotAuthorized />} /> {/* Create a NotAuthorized component */}
               </Route>
