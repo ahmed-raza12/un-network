@@ -2,6 +2,9 @@ import React, { useState, useRef } from 'react';
 import { Box, Typography, Divider, Grid, Paper, Button, TextField, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import { green } from '@mui/material/colors';
 import { useReactToPrint } from 'react-to-print';
+import { createInvoice } from '../store/actions/invoiceActions';
+import { useDispatch, useSelector } from 'react-redux';
+import { ref, db, push, set } from '../firebase'; // Import firebase references
 
 const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
     <div ref={ref}>
@@ -19,7 +22,7 @@ const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
                 <Typography variant="h6" fontWeight="bold" color="#6b49e4">
                     Payment Receipt
                 </Typography>
-                <Typography variant="subtitle1" color="textSecondary">
+                <Typography variant="subtitle1" color="textPrimary">
                     Receipt #{receiptData.invoiceNo}
                 </Typography>
                 <Box sx={{
@@ -31,17 +34,23 @@ const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
                     mt: 1,
                 }}>
                     
-                    <Typography variant="body2">{new Date(receiptData.date).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' })}</Typography>
+                    <Typography variant="body2" color="textPrimary"> {new Date(receiptData.date).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' })}</Typography>
                 </Box>
             </Box>
 
             {/* User Details */}
             <Box textAlign="left" mt={3}>
                 <Typography variant="h6" fontWeight="bold" color="#6b49e4">
-                    {receiptData.userName}
+                    {receiptData.customerName}
                 </Typography>
-                <Typography variant="body2" color="textSecondary">
-                    User ID: {receiptData.userId}
+                <Typography variant="body2" color="textPrimary">
+                    Customer ID: {receiptData.userName}
+                </Typography>
+                <Typography variant="body2" color="textPrimary">
+                    Address: {receiptData.address}
+                </Typography>
+                <Typography variant="body2" color="textPrimary">
+                    Phone: {receiptData.phone}
                 </Typography>
             </Box>
 
@@ -49,7 +58,7 @@ const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
                 <Typography variant="body2" color="#6b49e4">
                     Charged By
                 </Typography>
-                <Typography variant="body2" color="textSecondary">
+                <Typography variant="body2" color="textPrimary">
                     {receiptData.chargedBy}
                 </Typography>
             </Grid>
@@ -57,7 +66,7 @@ const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
 
             {/* ISP Details */}
             <Box bgcolor="#e0ebff" padding={1} borderRadius={1} mb={1}>
-                <Typography variant="body2" color="textSecondary">
+                <Typography variant="body2" color="textPrimary">
                     ISP Details
                 </Typography>
             </Box>
@@ -65,14 +74,14 @@ const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
                 <Typography variant="body2" color="#6b49e4">
                     ISP Name
                 </Typography>
-                <Typography variant="body2" color="textSecondary">
+                <Typography variant="body2" color="textPrimary">
                     {receiptData.ispName}
                 </Typography>
             </Grid>
 
             {/* Payment Details */}
             <Box bgcolor="#e0ebff" padding={1} borderRadius={1} my={2}>
-                <Typography variant="body2" color="textSecondary">
+                <Typography variant="body2" color="textPrimary">
                     Payment Details
                 </Typography>
             </Box>
@@ -80,7 +89,7 @@ const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
                 <Typography variant="body2" color="#6b49e4">
                     Amount
                 </Typography>
-                <Typography variant="body2" color="textSecondary">
+                <Typography variant="body2" color="textPrimary">
                     Rs. {receiptData.amount}
                 </Typography>
             </Grid>
@@ -88,7 +97,7 @@ const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
                 <Typography variant="body2" color="#6b49e4">
                     Month
                 </Typography>
-                <Typography variant="body2" color="textSecondary">
+                <Typography variant="body2" color="textPrimary">
                     {receiptData.month}
                 </Typography>
             </Grid>
@@ -99,43 +108,86 @@ const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
 const Slips = () => {
     const [invoiceNo, setInvoiceNo] = useState('001');
     const [date, setDate] = useState(new Date().toLocaleString('default', {month: 'short', day: 'numeric', year: 'numeric'}));
-    // const [date, setDate] = useState(new Date().toDateString().split('T')[0]);
-    const [chargedBy, setChargedBy] = useState('');
-    const [userId, setUserId] = useState('');
     const [userName, setUserName] = useState('');
+    const [chargedBy, setChargedBy] = useState('');
+    const [customerId, setCustomerId] = useState('');
+    const [customerName, setCustomerName] = useState('');
     const [ispName, setIspName] = useState('');
     const [amount, setAmount] = useState('');
     const [month, setMonth] = useState('');
-
+    const [address, setAddress] = useState('');
+    const [phone, setPhone] = useState('');
+    const dispatch = useDispatch();
+    const dealerId = useSelector((state) => state.auth.user.uid);
     const componentRef = useRef();
 
     const handlePrint = useReactToPrint({
         content: () => componentRef.current,
     });
 
-    // Mock function to fetch user details - replace with actual API call
-    const fetchUserDetails = (id) => {
-        // This should be replaced with actual API call
-        return {
-            name: 'John Doe',
-            isp: 'Sample ISP'
-        };
+    const fetchCustomerDetails = (id) => {
+        try {
+
+            const customers = JSON.parse(localStorage.getItem(`customers_${dealerId}`)) || [];
+            console.log(customers, 'customers');
+            
+            const customer = customers.find(c => c.userName === id);
+            return customer || null;
+        } catch (error) {
+            console.error('Error fetching customer details:', error);
+            return null;
+        }
     };
 
-    const handleUserIdChange = (e) => {
+    const handleCustomerName = (e) => {
         const id = e.target.value;
-        setUserId(id);
+        setUserName(id);
+        console.log(id, 'id');
         
         if (id) {
-            const userDetails = fetchUserDetails(id);
-            setUserName(userDetails.name);
-            setIspName(userDetails.isp);
+            const customerDetails = fetchCustomerDetails(id);
+            console.log(customerDetails, 'customerDetails');
+            
+            if (customerDetails) {
+                setCustomerName(customerDetails.fullName || '');
+                setIspName(customerDetails.ispName || '');
+                setAddress(customerDetails.address || '');
+                setPhone(customerDetails.phone || '');
+                setUserName(customerDetails.userName || '');
+                setCustomerId(customerDetails.id || '');
+            } else {
+                setCustomerName('');
+                setIspName('');
+                setAddress('');
+                setPhone('');
+            }
         }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+
+        const invoiceData = {
+            invoiceNo: `INV-${year}${month}-${customerId.slice(-4)}`,
+            date,
+            chargedBy,
+            userName,
+            customerId,
+            userName,
+            customerName,
+            dealerId,
+            ispName,
+            amount,
+            address,
+            phone
+        };
+        
+        dispatch(createInvoice(invoiceData));
         handlePrint();
+        
         setInvoiceNo(prev => {
             const num = parseInt(prev) + 1;
             return num.toString().padStart(3, '0');
@@ -146,11 +198,14 @@ const Slips = () => {
         invoiceNo,
         date,
         chargedBy,
-        userId,
+        customerId,
         userName,
+        customerName,
         ispName,
         amount,
-        month
+        month,
+        address,
+        phone
     };
 
     return (
@@ -165,15 +220,6 @@ const Slips = () => {
                     <Grid container spacing={3}>
                         <Grid item xs={12} sm={6}>
                             <TextField
-                                label="Invoice No"
-                                value={invoiceNo}
-                                disabled
-                                fullWidth
-                                sx={{ mb: 2 }}
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                            <TextField
                                 label="Date"
                                 type="date"
                                 value={date}
@@ -185,9 +231,9 @@ const Slips = () => {
                         </Grid>
                         <Grid item xs={12} sm={6}>
                             <TextField
-                                label="User ID"
-                                value={userId}
-                                onChange={handleUserIdChange}
+                                label="Customer username"
+                                value={userName}
+                                onChange={handleCustomerName}
                                 fullWidth
                                 sx={{ mb: 2 }}
                             />
@@ -195,7 +241,7 @@ const Slips = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 label="Name"
-                                value={userName}
+                                value={customerName}
                                 disabled
                                 fullWidth
                                 sx={{ mb: 2 }}
@@ -205,6 +251,24 @@ const Slips = () => {
                             <TextField
                                 label="ISP Name"
                                 value={ispName}
+                                disabled
+                                fullWidth
+                                sx={{ mb: 2 }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                label="Address"
+                                value={address}
+                                disabled
+                                fullWidth
+                                sx={{ mb: 2 }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                label="Phone"
+                                value={phone}
                                 disabled
                                 fullWidth
                                 sx={{ mb: 2 }}

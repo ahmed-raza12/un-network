@@ -1,163 +1,106 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Box,
-  Typography,
-  TextField,
   Button,
   Grid,
+  MenuItem,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-} from "@mui/material";
+  TextField,
+  Typography,
+  CircularProgress,
+  Alert
+} from '@mui/material';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchInvoicesByDateRange } from '../store/actions/reportActions';
+import generateTestInvoices from '../utils/generateTestInvoices';
 
 function Report() {
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
+  const dispatch = useDispatch();
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState('paid');
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Dummy data for the table
-  const reportData = [
-    {
-      id: 1,
-      customerId: "C001",
-      date: "2024-11-15",
-      fullName: "John Doe",
-      address: "123 Main St",
-      chargedBy: "Admin",
-      lastActivationDate: "2024-11-01",
-      package: "Premium",
-      units: 150,
-      resellerId: "R001",
-      contractorId: "CON001",
-      subContractorId: "SUB001",
-      packageAmount: 100,
-      unusedAmount: 20,
-      totalAmount: 120,
-    },
-    {
-      id: 2,
-      customerId: "C001",
-      date: "2024-11-15",
-      fullName: "John Doe",
-      address: "123 Main St",
-      chargedBy: "Admin",
-      lastActivationDate: "2024-11-01",
-      package: "Premium",
-      units: 150,
-      resellerId: "R001",
-      contractorId: "CON001",
-      subContractorId: "SUB001",
-      packageAmount: 100,
-      unusedAmount: 20,
-      totalAmount: 120,
-    },
-    {
-      id: 3,
-      customerId: "C001",
-      date: "2024-11-15",
-      fullName: "John Doe",
-      address: "123 Main St",
-      chargedBy: "Admin",
-      lastActivationDate: "2024-11-01",
-      package: "Premium",
-      units: 150,
-      resellerId: "R001",
-      contractorId: "CON001",
-      subContractorId: "SUB001",
-      packageAmount: 100,
-      unusedAmount: 20,
-      totalAmount: 120,
-    },
-    // Add more rows as needed
-  ];
+  const { invoices = [], loading, summary } = useSelector((state) => state.report);
 
-  const handleSearch = () => {
-    console.log("Searching for reports...");
-    // Logic for searching reports based on date range
-  };
+  const handleDateRangeChange = () => {
+    if (startDate && endDate) {
+      // Create dates in local timezone
+      const start = new Date(startDate + 'T00:00:00');
+      const end = new Date(endDate + 'T23:59:59.999');
 
-  const handleDownload = () => {
-    console.log("Downloading CSV...");
+      console.log('Local dates:', {
+        startInput: startDate,
+        endInput: endDate,
+        startDate: start.toISOString(),
+        endDate: end.toISOString()
+      });
 
-    // Convert data to CSV format
-    const headers = [
-      'Customer ID',
-      'Date',
-      'Full Name',
-      'Address',
-      'Charged By',
-      'Last Activation Date',
-      'Package',
-      'Units',
-      'Reseller ID',
-      'Contractor ID',
-      'Sub Contractor ID',
-      'Package Amount',
-      'Unused Amount',
-      'Total Amount'
-    ];
-
-    const csvRows = [
-      headers.join(','), // Header row
-      ...reportData.map(row => [
-        row.customerId,
-        row.date,
-        `"${row.fullName}"`, // Wrap in quotes to handle commas in names
-        `"${row.address}"`,
-        row.chargedBy,
-        row.lastActivationDate,
-        `"${row.package}"`,
-        row.units,
-        row.resellerId,
-        row.contractorId,
-        row.subContractorId,
-        row.packageAmount,
-        row.unusedAmount,
-        row.totalAmount
-      ].join(','))
-    ];
-
-    const csvString = csvRows.join('\n');
-
-    // Create a Blob and download
-    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `report_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      dispatch(fetchInvoicesByDateRange(start, end, paymentStatus));
     }
   };
+
+  const handleSearch = async () => {
+    if (!startDate || !endDate) {
+      setError("Please select both start and end dates");
+      return;
+    }
+
+    try {
+      // Create dates in local timezone
+      const start = new Date(startDate + 'T00:00:00');
+      const end = new Date(endDate + 'T23:59:59.999');
+
+      console.log('Local dates:', {
+        startInput: startDate,
+        endInput: endDate,
+        startDate: start.toISOString(),
+        endDate: end.toISOString()
+      });
+
+      await dispatch(fetchInvoicesByDateRange(start, end, paymentStatus));
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleGenerateTestData = async () => {
+    setGenerating(true);
+    try {
+      await generateTestInvoices();
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
-    <Box sx={{ padding: 4, maxWidth: "100%", margin: "auto" }}>
-      {/* Header */}
-      <Typography variant="h4" fontWeight="bold" textAlign="center" mb={3}>
-        Report
+    <Box sx={{ padding: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        Invoice Report
       </Typography>
 
-      {/* Form */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
       <Paper sx={{ padding: 3, marginBottom: 3 }} elevation={3}>
         <Grid container spacing={3} alignItems="center">
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label="Report Type"
-              value="Daily Units Consumption"
-              disabled
-              InputProps={{
-                style: { backgroundColor: "#f5f5f5" },
-              }}
-            />
-          </Grid>
           <Grid item xs={12} md={3}>
             <TextField
+              fullWidth
               label="Start Date"
               type="date"
               value={startDate}
@@ -165,11 +108,14 @@ function Report() {
               InputLabelProps={{
                 shrink: true,
               }}
-              fullWidth
+              InputProps={{
+                style: { backgroundColor: "#f5f5f5" },
+              }}
             />
           </Grid>
           <Grid item xs={12} md={3}>
             <TextField
+              fullWidth
               label="End Date"
               type="date"
               value={endDate}
@@ -177,91 +123,126 @@ function Report() {
               InputLabelProps={{
                 shrink: true,
               }}
-              fullWidth
+              InputProps={{
+                style: { backgroundColor: "#f5f5f5" },
+              }}
             />
           </Grid>
-          <Grid item xs={12} md={2} textAlign="center">
+          <Grid item xs={12} md={4}>
+            <TextField
+              select
+              fullWidth
+              label="Payment Status"
+              value={paymentStatus}
+              onChange={(e) => {
+                setPaymentStatus(e.target.value);
+              }}
+              sx={{ height: '56px' }}
+            >
+              <MenuItem value="paid">Paid Customers</MenuItem>
+              <MenuItem value="due">Due Customers</MenuItem>
+            </TextField>
+          </Grid>
+          <Grid item xs={12} md={2}>
             <Button
               variant="contained"
-              color="primary"
               onClick={handleSearch}
+              disabled={loading || generating}
               fullWidth
+              sx={{
+                height: '56px',
+                backgroundColor: '#4CAF50',
+                '&:hover': {
+                  backgroundColor: '#45a049',
+                }
+              }}
             >
-              Search
+              {loading ? <CircularProgress size={24} /> : "Search"}
             </Button>
           </Grid>
         </Grid>
       </Paper>
 
-      <Grid item xs={12} md={12} textAlign="right" sx={{ mb: 2 }}>
-        <Button
-          variant="outlined"
-          color="secondary"
-          onClick={handleDownload}
-        >
-          Download CSV
-        </Button>
+      {summary && (
+        <Paper sx={{ padding: 3, marginBottom: 3 }} elevation={3}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={3}>
+              <Typography variant="subtitle1" color="textSecondary">Total Amount</Typography>
+              <Typography variant="h6">Rs. {summary.totalAmount}</Typography>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Typography variant="subtitle1" color="textSecondary">Total Invoices</Typography>
+              <Typography variant="h6">{summary.totalInvoices}</Typography>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Typography variant="subtitle1" color="textSecondary">Paid Customers</Typography>
+              <Typography variant="h6">{summary.paidCount}</Typography>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Typography variant="subtitle1" color="textSecondary">Due Customers</Typography>
+              <Typography variant="h6">{summary.dueCount}</Typography>
+            </Grid>
+          </Grid>
+        </Paper>
+      )}
+
+      <Grid container spacing={2} mb={3} justifyContent="flex-end">
+        <Grid item>
+          <Button
+            variant="contained"
+            onClick={handleGenerateTestData}
+            disabled={generating || loading}
+            sx={{
+              backgroundColor: '#6b49e4',
+              '&:hover': {
+                backgroundColor: '#5438b3',
+              }
+            }}
+          >
+            {generating ? <CircularProgress size={24} /> : "Generate Test Data"}
+          </Button>
+        </Grid>
       </Grid>
-      {/* Table */}
-      <Grid item xs={12} md={12} sx={{
-        '@media (max-width: 600px)': {
-          '& .MuiTableCell-root': {
-            padding: '4px 8px',
-            fontSize: '0.75rem',
-          }
-        }
-      }} >
-        <TableContainer component={Paper} elevation={3}>
-          <Table sx={{ '& .MuiTableCell-root': { borderRight: '1px solid rgba(224, 224, 224, 1)' } }}>
-            <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
-              <TableRow>
-                {[
-                  "#",
-                  "Customer ID",
-                  "Date",
-                  "Full Name",
-                  "Address",
-                  "Charged by",
-                  "Last Activation Date",
-                  "Package",
-                  "Units",
-                  "Reseller ID",
-                  "Contractor ID",
-                  "Sub-Contractor ID",
-                  "Package/Addon Amount",
-                  "Previous Package/Addon Unused Amount",
-                  "Total Amount",
-                ].map((header, index) => (
-                  <TableCell key={index} align="center">
-                    {header}
-                  </TableCell>
-                ))}
+
+      <TableContainer component={Paper}>
+        <Table sx={{ '& .MuiTableCell-root': { borderRight: '1px solid rgba(224, 224, 224, 1)' } }}>
+          <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
+            <TableRow>
+              <TableCell>Invoice No</TableCell>
+              <TableCell>Date</TableCell>
+              <TableCell>Customer</TableCell>
+              <TableCell>Package</TableCell>
+              <TableCell align="right">Amount</TableCell>
+              <TableCell>Status</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {Array.isArray(invoices) && invoices.map((invoice) => (
+              <TableRow key={invoice?.id || invoice?.customerId || Math.random()}>
+                <TableCell>{invoice?.invoiceNo || 'N/A'}</TableCell>
+                <TableCell>{invoice?.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : 'N/A'}</TableCell>
+                <TableCell>{invoice?.customerName || 'N/A'}</TableCell>
+                <TableCell>{invoice?.ispName || 'N/A'}</TableCell>
+                <TableCell align="right">Rs. {invoice?.amount || 0}</TableCell>
+                <TableCell>
+                  <Typography
+                    component="span"
+                    sx={{
+                      px: 2,
+                      py: 0.5,
+                      borderRadius: 1,
+                      backgroundColor: invoice?.status === 'paid' ? '#e8f5e9' : '#ffebee',
+                      color: invoice?.status === 'paid' ? '#2e7d32' : '#c62828'
+                    }}
+                  >
+                    {invoice?.status === 'paid' ? 'Paid' : 'Due'}
+                  </Typography>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {reportData.map((row, index) => (
-                <TableRow key={row.id}>
-                  <TableCell align="center">{index + 1}</TableCell>
-                  <TableCell align="center">{row.customerId}</TableCell>
-                  <TableCell align="center">{row.date}</TableCell>
-                  <TableCell align="center">{row.fullName}</TableCell>
-                  <TableCell align="center">{row.address}</TableCell>
-                  <TableCell align="center">{row.chargedBy}</TableCell>
-                  <TableCell align="center">{row.lastActivationDate}</TableCell>
-                  <TableCell align="center">{row.package}</TableCell>
-                  <TableCell align="center">{row.units}</TableCell>
-                  <TableCell align="center">{row.resellerId}</TableCell>
-                  <TableCell align="center">{row.contractorId}</TableCell>
-                  <TableCell align="center">{row.subContractorId}</TableCell>
-                  <TableCell align="center">{row.packageAmount}</TableCell>
-                  <TableCell align="center">{row.unusedAmount}</TableCell>
-                  <TableCell align="center">{row.totalAmount}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Grid>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
     </Box>
   );
 }

@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import colors from '../colors';
 import { addStaff } from '../store/actions/staffActions'; // Import your action for adding staff
 import { TextFieldStyle } from './CreateISP';
+import { useNavigate } from 'react-router-dom';
 
 function CreateStaff() {
   const [firstName, setFirstName] = useState('');
@@ -15,6 +16,7 @@ function CreateStaff() {
   const [designation, setDesignation] = useState('');
   const dealerId = useSelector((state) => state.auth.user.uid)
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const handleSubmit = () => {
     const staffData = {
@@ -120,17 +122,21 @@ function CreateStaff() {
             onChange={(e) => setDesignation(e.target.value)}
           />
         </Grid>
+        <Grid item xs={12}>
+          <Box sx={{ display: 'flex', gap: 2, mt: 3, justifyContent: 'center' }}>
+            <Button
+              type="submit"
+              variant="contained"
+              sx={{
+                background: colors.gradientBackground,
+                '&:hover': { background: colors.gradientBackground }
+              }}
+            >
+              Create Staff
+            </Button>
+          </Box>
+        </Grid>
       </Grid>
-      <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
-        <Button
-          variant="contained"
-          //   color="primary"
-          onClick={handleSubmit}
-          style={{ marginLeft: '10px', marginTop: 30, backgroundColor: colors.primary }}
-        >
-          Create Profile
-        </Button>
-      </Box>
     </Box>
   );
 }

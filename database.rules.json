@@ -1,0 +1,72 @@
+{
+  "rules": {
+    "customers": {
+      "$userId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "dealers": {
+      ".read": true,
+      ".write": true
+    },
+    "staff": {
+      "$userId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "isps": {
+      "$userId": {
+        ".read": true,
+        ".write": true,
+        "$ispId": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    },
+    "users": {
+      "$uId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "invoices": {
+      "$dealerId": {
+        ".read": true,
+        ".write": true,
+        "$year": {
+          ".read": true,
+          ".write": true,
+          "$month": {
+            ".read": true,
+            ".write": true,
+            "$invoiceId": {
+              ".read": true,
+              ".write": true
+            }
+          }
+        }
+      }
+    },
+    "customerInvoiceHistory": {
+      "$customerId": {
+        ".read": true,
+        ".write": true,
+        "monthlyInvoices": {
+          "$year": {
+            "$month": {
+              ".read": true,
+              ".write": true
+            }
+          }
+        },
+        "lastInvoiceDate": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    }
+  }
+}

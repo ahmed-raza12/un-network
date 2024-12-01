@@ -1,11 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
     Box,
     Container,
     Grid,
     Chip,
-    IconButton,
-    Pagination,
+    Paper,
     Typography,
     List,
     ListItem,
@@ -13,22 +12,35 @@ import {
     ListItemText,
     Tabs,
     Tab,
-    Paper
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    IconButton,
+    styled,
+    Pagination
 } from '@mui/material';
-import { styled } from "@mui/material/styles";
+
 import {
     Phone,
     Person,
     Badge,
     Wallet,
-    // ReceiptIcon,
-    CalendarToday
+    CalendarToday,
+    Print as PrintIcon,
+    Visibility as VisibilityIcon
 } from '@mui/icons-material';
 import PaymentIcon from '@mui/icons-material/Payment';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import colors from '../colors';
+import { fetchInvoicesByCustomerUid } from '../store/actions/invoiceActions';
+import { useDispatch, useSelector } from 'react-redux';
+import { useReactToPrint } from 'react-to-print';
+import { PrintableInvoice } from './Invoice';
 
 // Create a styled Tab component
 const StyledTab = styled(Tab)(({ theme }) => ({
@@ -39,8 +51,40 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 }));
 
 function CustomerDetails() {
-    const [tabValue, setTabValue] = React.useState(0);
+    const [tabValue, setTabValue] = useState(0);
+    const [selectedInvoice, setSelectedInvoice] = useState(null);
     const navigate = useNavigate()
+    const { id } = useParams();
+    const dispatch = useDispatch();
+    const { invoices, loading, customer } = useSelector((state) => state.invoices);
+    const printRef = useRef();
+
+    useEffect(() => {
+        if (customer?.uid) {
+            console.log('Fetching invoices for customer:', customer.uid);
+            dispatch(fetchInvoicesByCustomerUid(customer.uid));
+        }
+    }, [dispatch, customer?.uid]);
+
+    useEffect(() => {
+        dispatch(fetchInvoicesByCustomerUid(id));
+    }, [dispatch, id]);
+
+    const handlePrint = useReactToPrint({
+        content: () => printRef.current,
+        documentTitle: `Invoice-${selectedInvoice?.invoiceNo || ''}`,
+        removeAfterPrint: true,
+    });
+
+    const handleViewInvoice = (invoice) => {
+        setSelectedInvoice(invoice);
+        navigate(`/invoice/${invoice.id}`);
+    };
+
+    const handlePrintInvoice = (invoice) => {
+        window.open(`/invoice/${invoice.id}?print=true`, '_blank');
+    };
+
     const handleTabChange = (event, newValue) => {
         console.log(newValue);
 
@@ -162,93 +206,59 @@ function CustomerDetails() {
                     </Box>
                 </Box>
             )}
-            {/* Invoice Item */}
             {tabValue === 1 && (
-                <Paper
-                    elevation={1}
-                    sx={{
-                        padding: { xs: 1, sm: 2 },
-                        borderRadius: { xs: 2, md: 3 },
-                        marginY: { xs: 2, md: 4 },
-                        maxWidth: "100%",
-                    }}
-                >
-                    <Grid container spacing={1} alignItems="center">
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Typography variant="subtitle2" color="textSecondary">
-                                Invoice Type
-                            </Typography>
-                            <Typography variant="h6" color="primary" sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
-                                New Connection
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={6} sm={6} md={1}>
-                            <Typography variant="subtitle2" color="textSecondary">
-                                Status
-                            </Typography>
-                            <Typography variant="body2" color="primary">
-                                OPEN
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={6} sm={6} md={2}>
-                            <Typography variant="subtitle2" color="textSecondary">
-                                Total Amount
-                            </Typography>
-                            <Typography variant="h6" color="primary" sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
-                                500
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={6} sm={6} md={1}>
-                            <Typography variant="subtitle2" color="textSecondary">
-                                Paid
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: 'green' }}>
-                                +300
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={6} sm={6} md={1}>
-                            <Typography variant="subtitle2" color="textSecondary">
-                                Discount
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: 'red' }}>
-                                -0
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={6} sm={6} md={1}>
-                            <Typography variant="subtitle2" color="textSecondary">
-                                Remaining
-                            </Typography>
-                            <Typography variant="h6" color="primary" sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
-                                200
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={2}>
-                            <Typography variant="subtitle2" color="textSecondary">
-                                Invoice Date
-                            </Typography>
-                            <Chip
-                                label="13-November-2024 02:14 PM"
-                                sx={{
-                                    backgroundColor: '#e8f5e9',
-                                    color: '#43a047',
-                                    maxWidth: '100%',
-                                    height: 'auto',
-                                    '& .MuiChip-label': {
-                                        whiteSpace: 'normal',
-                                        padding: '8px'
-                                    }
-                                }}
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={1} container justifyContent="flex-end">
-                            <IconButton onClick={() => navigate('/invoice')}>
-                                <ReceiptIcon />
-                            </IconButton>
-                        </Grid>
-                    </Grid>
-                </Paper>
-            )}
+                <Box sx={{ mt: 3 }}>
+                    <TableContainer component={Paper} sx={{ mb: 3 }}>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Invoice No</TableCell>
+                                    <TableCell>Date</TableCell>
+                                    <TableCell>Package</TableCell>
+                                    <TableCell align="right">Amount</TableCell>
+                                    <TableCell align="right">Actions</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {invoices.map((invoice) => (
+                                    <TableRow key={invoice.id}>
+                                        <TableCell>{invoice.invoiceNo}</TableCell>
+                                        <TableCell>{new Date(invoice.createdAt).toLocaleDateString()}</TableCell>
+                                        <TableCell>{invoice.ispName}</TableCell>
+                                        <TableCell align="right">Rs. {invoice.amount}</TableCell>
+                                        <TableCell align="right">
+                                            <IconButton 
+                                                size="small" 
+                                                onClick={() => handleViewInvoice(invoice)}
+                                                sx={{ color: colors.primary }}
+                                            >
+                                                <VisibilityIcon />
+                                            </IconButton>
+                                            <IconButton 
+                                                size="small" 
+                                                onClick={() => handlePrintInvoice(invoice)}
+                                                sx={{ color: colors.primary }}
+                                            >
+                                                <PrintIcon />
+                                            </IconButton>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {invoices.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={5} align="center">
+                                            <Typography variant="body2" color="textSecondary">
+                                                No invoices found
+                                            </Typography>
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
 
+                </Box>
+            )}
             {/* Pagination */}
             <Box display="flex" justifyContent="center" mt={2}>
                 <Pagination

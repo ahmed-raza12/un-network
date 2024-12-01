@@ -14,10 +14,23 @@ export const login = (credentials) => {
 };
 
 export const logout = () => {
-  return  (dispatch) => {
-    // Remove all local storage items
-    Object.keys(localStorage).forEach(key => localStorage.removeItem(key));
-    dispatch({ type: 'LOGOUT' }); // Dispatch logout action to update Redux state
+  return (dispatch) => {
+    try {
+      // Clear all localStorage items
+      localStorage.clear();
+      
+      // Reset all reducers to their initial state
+      dispatch({ type: 'LOGOUT' });
+      dispatch({ type: 'RESET_CUSTOMERS' });
+      dispatch({ type: 'RESET_INVOICES' });
+      dispatch({ type: 'RESET_REPORT' });
+      dispatch({ type: 'RESET_DUE_CUSTOMERS' });
+      dispatch({ type: 'RESET_STAFF' });
+      
+      // Redirect to login page or show success message
+      console.log('Successfully logged out');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   };
-
 };

@@ -19,6 +19,7 @@ import Groups2 from '@mui/icons-material/Groups2';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import ReportIcon from '@mui/icons-material/Report';
 import MenuIcon from '@mui/icons-material/Menu';
+import loginLogo from '../assets/panel_logo.png';
 
 const drawerWidth = 240;
 
@@ -29,6 +30,8 @@ function SidebarLayout() {
     const [drawerOpen, setDrawerOpen] = useState(false); // State for drawer open/close
     const [anchorEl, setAnchorEl] = useState(null);
     const userRole = useSelector((state) => state.auth.user?.role); // Get user role from state
+    const userData = useSelector((state) => state.auth.user?.userData); // Get user data from state
+    const name = userRole === 'staff' ? userData.firstName : userData.name;
 
     const toggleDrawer = () => {
         setDrawerOpen(!drawerOpen); // Toggle drawer state
@@ -49,7 +52,7 @@ function SidebarLayout() {
         { text: 'ISP', icon: <Groups2 fontSize="medium" />, path: '/isp', roles: ['admin', 'dealer'] },
         { text: 'Reports', icon: <ReportIcon fontSize="medium" />, path: '/reports', roles: ['admin', 'dealer', 'staff'] },
         { text: 'Slips', icon: <ReportIcon fontSize="medium" />, path: '/slips', roles: ['admin', 'dealer', 'staff'] },
-        { text: 'Due Customers', icon: <ReportIcon fontSize="medium" />, path: '/due-customers', roles: ['admin', 'dealer', 'staff'] },
+        // { text: 'Due Customers', icon: <ReportIcon fontSize="medium" />, path: '/due-customers', roles: ['admin', 'dealer', 'staff'] },
 
     ];
 
@@ -63,7 +66,7 @@ function SidebarLayout() {
             item.path === currentPath ||
             (item.path === '/customers' && (currentPath === '/add-customer' || currentPath === '/customer-details' || currentPath === '/invoice' || currentPath.startsWith('/customer'))) ||
             (item.path === '/staff' && (currentPath === '/create-staff' || currentPath === '/update-staff' || currentPath.startsWith('/staff'))) || // Check for staff routes
-            (item.path === '/isp' && (currentPath === '/create-isp' || currentPath === '/update-staff' || currentPath.startsWith('/isp'))) // Check for staff routes
+            (item.path === '/isp' && (currentPath === '/create-isp' || currentPath === '/update-staff' || currentPath.startsWith('/isp') || currentPath.startsWith('/create-pkg'))) // Check for staff routes
 
         );
         setSelectedIndex(activeIndex !== -1 ? activeIndex : 0); // Default to 0 if not found
@@ -119,9 +122,13 @@ function SidebarLayout() {
                     '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box', background: colors.gradientBackground, color: '#fff', height: "100vh" },
                 }}
             >
-                <Box sx={{ padding: 2, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                    <Typography variant="h6" color="inherit" sx={{ marginBottom: 2 }}>UN Network</Typography>
-                </Box>
+                <Box display="flex" justifyContent="center" alignItems="center" mt={2} mb={2}>
+                        <img
+                            src={loginLogo}
+                            alt="Logo"
+                            style={{ height: 'auto', maxWidth: '140px' }} // Responsive image
+                        />
+                    </Box>
                 <List sx={{ height: "100vh" }}>
                     {location.pathname === '/not-authorized' && (
                         <ListItem sx={{ cursor: "not-allowed", backgroundColor: 'transparent', color: 'inherit' }}>
@@ -167,8 +174,12 @@ function SidebarLayout() {
                         '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box', background: colors.gradientBackground, color: '#fff' },
                     }}
                 >
-                    <Box sx={{ padding: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Typography variant="h6" color="inherit">UN Network</Typography>
+                    <Box display="flex" justifyContent="center" alignItems="center" mt={2} mb={2}>
+                        <img
+                            src={loginLogo}
+                            alt="Logo"
+                            style={{ height: 'auto', maxWidth: '160px' }} // Responsive image
+                        />
                     </Box>
                     <List sx={{ padding: '4px 1px', }}>
                         {filteredItems.map((item, index) => (
@@ -208,7 +219,7 @@ function SidebarLayout() {
                     </Box>
 
                     {/* User Info */}
-                    <Box display="flex" alignItems="center" sx={{ flexWrap: 'wrap', '& > *': { m: { xs: 0, md: 1 }, p: { xs: 0.3, md: 0.8 } } }}>
+                    <Box display="flex" alignItems="center" sx={{ flexWrap: 'wrap', '& > *': { m: { xs: 0, md: 1 }, p: { xs: 0.2, md: 0.8 } } }}>
                         <Button
                             variant="outlined"
                             sx={{
@@ -233,10 +244,10 @@ function SidebarLayout() {
                                     mr: 1
                                 }}
                             >
-                                N
+                                {name.charAt(0).toUpperCase()}
                             </Avatar>
-                            <Typography variant="body2" color={colors.primary}>
-                                nasir
+                            <Typography variant="body2" sx={{ fontSize: { xs: 8, sm: 14 } }} color={colors.primary}>
+                                {window.innerWidth < 700 ? (name.length > 10 ? `${name.slice(0, 8)}...` : name) : name}
                             </Typography>
                         </Button>
 
@@ -256,14 +267,14 @@ function SidebarLayout() {
                             <MenuItem onClick={handleLogout}>Logout</MenuItem>
                         </Menu>
                         {/* Icons */}
-                        <IconButton sx={{ ml: 0.5 }}>
-                            <SettingsIcon sx={{ fontSize: { xs: '1.2rem', sm: '1.6rem' }, color: colors.primary }} />
+                        <IconButton sx={{ ml: 0.3 }}>
+                            <SettingsIcon sx={{ fontSize: { xs: '1.1rem', sm: '1.6rem' }, color: colors.primary }} />
                         </IconButton>
                         <IconButton>
-                            <SearchIcon sx={{ fontSize: { xs: '1.2rem', sm: '1.6rem' }, color: colors.primary }} />
+                            <SearchIcon sx={{ fontSize: { xs: '1.1rem', sm: '1.6rem' }, color: colors.primary }} />
                         </IconButton>
                         <IconButton>
-                            <NotificationsIcon sx={{ fontSize: { xs: '1.2rem', sm: '1.6rem' }, color: colors.primary }} />
+                            <NotificationsIcon sx={{ fontSize: { xs: '1.1rem', sm: '1.6rem' }, color: colors.primary }} />
                         </IconButton>
 
                     </Box>

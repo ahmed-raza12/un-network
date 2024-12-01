@@ -1,7 +1,10 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Box, Typography, Divider, Grid, Paper, Button } from '@mui/material';
 import { green } from '@mui/material/colors';
 import { useReactToPrint } from 'react-to-print';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchInvoiceDetails } from '../store/actions/invoiceActions';
 
 // Use forwardRef to forward the ref properly
 const PrintableInvoice = React.forwardRef(({ invoiceDetails }, ref) => (
@@ -137,48 +140,88 @@ const PrintableInvoice = React.forwardRef(({ invoiceDetails }, ref) => (
 ));
 
 function Invoice() {
-  const invoiceDetails = {
-    invoiceNumber: '828',
-    date: '13-November-2024 02:14 PM',
-    userName: 'hgh jhj',
-    userPhone: '03030669886',
-    userAddress: 'hghnb 1234',
-    packageName: 'CATV',
-    packagePrice: 500,
-    discount: 0,
-    totalAmount: 500,
-    paidAmount: 300,
-    balance: 200,
-  };
-
+  const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const shouldPrint = searchParams.get('print') === 'true';
+  const dispatch = useDispatch();
+  const { currentInvoice, loading } = useSelector((state) => state.invoices);
   const componentRef = useRef();
+
+  useEffect(() => {
+    if (id) {
+      dispatch(fetchInvoiceDetails(id));
+    }
+  }, [dispatch, id]);
+
+  useEffect(() => {
+    if (shouldPrint && currentInvoice && componentRef.current) {
+      handlePrint();
+    }
+  }, [shouldPrint, currentInvoice]);
 
   const handlePrint = useReactToPrint({
     content: () => componentRef.current,
-    documentTitle: `Invoice-${invoiceDetails.invoiceNumber}`,
+    documentTitle: `Invoice-${currentInvoice?.invoiceNo || ''}`,
     removeAfterPrint: true,
+    onAfterPrint: () => {
+      if (shouldPrint) {
+        window.close();
+      }
+    }
   });
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography>Loading invoice...</Typography>
+      </Box>
+    );
+  }
+
+  if (!currentInvoice) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography>Invoice not found</Typography>
+      </Box>
+    );
+  }
+
+  const invoiceDetails = {
+    invoiceNumber: currentInvoice.invoiceNo,
+    date: new Date(currentInvoice.createdAt).toLocaleString(),
+    userName: currentInvoice.customerName,
+    userPhone: currentInvoice.phone,
+    userAddress: currentInvoice.address,
+    packageName: currentInvoice.ispName,
+    packagePrice: currentInvoice.amount,
+    discount: 0,
+    totalAmount: currentInvoice.amount,
+    paidAmount: currentInvoice.amount,
+    balance: 0,
+  };
 
   return (
     <Box>
       <PrintableInvoice ref={componentRef} invoiceDetails={invoiceDetails} />
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-        <Button
-          variant="contained"
-          onClick={handlePrint}
-          sx={{
-            backgroundColor: '#6b49e4',
-            '&:hover': {
-              backgroundColor: '#5438b3',
-            },
-            '@media print': {
-              display: 'none',
-            },
-          }}
-        >
-          Print Invoice
-        </Button>
-      </Box>
+      {!shouldPrint && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+          <Button
+            variant="contained"
+            onClick={handlePrint}
+            sx={{
+              backgroundColor: '#6b49e4',
+              '&:hover': {
+                backgroundColor: '#5438b3',
+              },
+              '@media print': {
+                display: 'none',
+              },
+            }}
+          >
+            Print Invoice
+          </Button>
+        </Box>
+      )}
     </Box>
   );
 }

@@ -16,6 +16,8 @@ import {
 } from '@mui/material';
 import colors from '../colors';
 import { ref, get } from 'firebase/database';
+import bgImage from '../assets/bg_image.png';
+import loginLogo from '../assets/login_logo.png';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -44,7 +46,7 @@ const Login = () => {
       console.log(snapshot.val())
       if (snapshot.exists()) {
           const userData = snapshot.val(); // Get the user data
-          const success = dispatch(login({ email: user.email, uid: user.uid, role: userData.role, dealerId: userData.dealerId })); // Dispatch login action
+          const success = dispatch(login({ email: user.email, uid: user.uid, role: userData.role, dealerId: userData.dealerId, userData: userData.userData })); // Dispatch login action
           console.log("User data:", userData);
           if (success) {
             navigate('/'); // Redirect to dashboard on successful login
@@ -63,12 +65,15 @@ const Login = () => {
       component="main" 
       maxWidth={false}
       style={{
-        display: 'flex', // Flexbox for centering
-        alignItems: 'center', // Center vertically
-        justifyContent: 'center', // Center horizontally
-        background: colors.gradientBackground, // Gradient background
-        padding: '20px 20px', // Add padding for mobile
-        height: '100vh', // Set height to cover the full viewport height
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        padding: '20px 60px',
+        height: '100vh',
+        backgroundImage: `url(${bgImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
       }}
     >
      
@@ -76,16 +81,17 @@ const Login = () => {
         elevation={3} 
         style={{ 
           padding: '20px', 
-          width: '100%', // Full width
-          maxWidth: '400px', // Set a max width for the Paper component
-          boxSizing: 'border-box', // Ensure padding is included in width
+          width: '100%',
+          maxWidth: '400px',
+          boxSizing: 'border-box',
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
         }}
       >
-        <Box display="flex" justifyContent="center" alignItems="center" mb={4}>
+        <Box display="flex" justifyContent="center" alignItems="center" mb={0}>
           <img 
-            src={require("../logo1.png")}
+            src={loginLogo}
             alt="Logo"
-            style={{ width: '30%', height: 'auto', maxWidth: '200px' }} // Responsive image
+            style={{ height: 'auto', maxWidth: '300px' }} // Responsive image
           />
         </Box>
         <form onSubmit={handleLogin}>
@@ -125,9 +131,9 @@ const Login = () => {
         </form>
         {error && <Alert style={{ marginTop: 20, marginBottom: 20 }} severity="error">{error}</Alert>}
         <Box mt={2}>
-          <Typography variant="body2" align="center">
+          {/* <Typography variant="body2" align="center">
             Don't have an account? <a href="/register">Sign Up</a>
-          </Typography>
+          </Typography> */}
         </Box>
       </Paper>
     </Container>

@@ -57,10 +57,7 @@ const StaffProfile = () => {
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         {staffMember.designation}
                     </Typography>
-                    <Typography variant="body2" sx={{ mb: 3 }}>
-                        Cash: {staffMember.cash}
-                    </Typography>
-                    <Button
+                    {/* <Button
                         variant="contained"
                         fullWidth
                         onClick={() => navigate('/update-staff', { state: staffMember })}
@@ -71,7 +68,7 @@ const StaffProfile = () => {
                         }}
                     >
                         Update Staff
-                    </Button>
+                    </Button> */}
                 </Box>
 
                 {/* Right Section */}
@@ -89,12 +86,32 @@ const StaffProfile = () => {
                             }}
                         >
                             <Tab label="Profile" />
-                            <Tab label="Transactions" />
+                            {/* <Tab label="Transactions" /> */}
                         </Tabs>
                     </Box>
 
                     <Paper elevation={5} sx={{ p: 3, borderRadius: 10, bgcolor: 'background.default' }}>
                         <List>
+                        <ListItem>
+                                <ListItemIcon>
+                                    <Person sx={{ color: colors.primary }} />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary="Firts Name"
+                                    secondary={staffMember.firstName}
+                                    secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
+                                />
+                            </ListItem>
+                            <ListItem>
+                                <ListItemIcon>
+                                    <Person sx={{ color: colors.primary }} />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary="Last Name"
+                                    secondary={staffMember.lastName}
+                                    secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
+                                />
+                            </ListItem>
                             <ListItem>
                                 <ListItemIcon>
                                     <Phone sx={{ color: colors.primary }} />
@@ -111,8 +128,8 @@ const StaffProfile = () => {
                                     <Person sx={{ color: colors.primary }} />
                                 </ListItemIcon>
                                 <ListItemText
-                                    primary="Username"
-                                    secondary={staffMember.username}
+                                    primary="Email"
+                                    secondary={staffMember.email}
                                     secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
                                 />
                             </ListItem>
@@ -128,43 +145,7 @@ const StaffProfile = () => {
                                 />
                             </ListItem>
 
-                            <ListItem>
-                                <ListItemIcon>
-                                    <Wallet sx={{ color: colors.primary }} />
-                                </ListItemIcon>
-                                <ListItemText
-                                    primary="Wallet Limit"
-                                    secondary={`${staffMember.walletLimit} Rs`}
-                                    secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
-                                />
-                            </ListItem>
-
-                            <ListItem>
-                                <ListItemIcon>
-                                    <CalendarToday sx={{ color: colors.primary }} />
-                                </ListItemIcon>
-                                <ListItemText
-                                    primary="Wallet Days"
-                                    secondary={`${staffMember.walletDays} Days`}
-                                    secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
-                                />
-                            </ListItem>
-
-                            <ListItem>
-                                <ListItemIcon>
-                                    <Lock sx={{ color: colors.primary }} />
-                                </ListItemIcon>
-                                <ListItemText
-                                    primary="Password"
-                                    secondary={
-                                        <Link href="#" sx={{ color: colors.primary, textDecoration: 'none', fontWeight: 'bold' }}>
-                                            Change Password
-                                        </Link>
-                                    }
-                                />
-                            </ListItem>
-
-                            <ListItem>
+                            {/* <ListItem>
                                 <ListItemIcon>
                                     <PowerSettingsNew sx={{ color: colors.primary }} />
                                 </ListItemIcon>
@@ -186,7 +167,7 @@ const StaffProfile = () => {
                                         </Box>
                                     }
                                 />
-                            </ListItem>
+                            </ListItem> */}
                         </List>
                     </Paper>
                 </Box>

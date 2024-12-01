@@ -6,15 +6,18 @@ import {
     Chip,
     IconButton,
     Pagination,
+    Button,
     Typography,
     List,
     ListItem,
     ListItemIcon,
     ListItemText,
     Tabs,
+    Avatar,
     Tab,
     Paper
 } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import { styled } from "@mui/material/styles";
 import {
     Phone,
@@ -22,13 +25,12 @@ import {
     Badge,
     Wallet,
     // ReceiptIcon,
-    CalendarToday
+    CalendarToday,
+    AddIcCallOutlined
 } from '@mui/icons-material';
-import PaymentIcon from '@mui/icons-material/Payment';
-import ReceiptIcon from '@mui/icons-material/Receipt';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { useNavigate } from 'react-router-dom';
 import colors from '../colors';
+import { tab } from '@testing-library/user-event/dist/tab';
 
 // Create a styled Tab component
 const StyledTab = styled(Tab)(({ theme }) => ({
@@ -39,12 +41,38 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 }));
 
 function ISPDetails() {
-    const [tabValue, setTabValue] = React.useState(0);
+    const [tabValue, setTabValue] = React.useState(() => {
+        // Get the saved tab value from localStorage or default to 0
+        const savedTab = localStorage.getItem('ispDetailsActiveTab');
+        return savedTab ? parseInt(savedTab) : 0;
+    });
     const navigate = useNavigate()
+
+    const pkgData = [
+        { name: 'DT-1MB', amount: 1200 },
+        { name: 'DT-2MB', amount: 2400 },
+        { name: 'DT-5MB', amount: 6000 },
+        { name: 'DT-10MB', amount: 12000 },
+        { name: 'DT-20MB', amount: 24000 },
+        { name: 'DT-50MB', amount: 60000 },
+        { name: 'DT-100MB', amount: 120000 },
+    ];
+
+    const handleStaffClick = (staffMember, id) => {
+        navigate(`/isp-details/${staffMember}`, { state: staffMember }); // Pass staff member data
+    };
     const handleTabChange = (event, newValue) => {
         console.log(newValue);
 
         setTabValue(newValue);
+        // Save the active tab to localStorage
+        localStorage.setItem('ispDetailsActiveTab', newValue.toString());
+    };
+
+    const handleCreatePackage = () => {
+        // Save current tab before navigation
+        localStorage.setItem('ispDetailsActiveTab', '1'); // 1 is the index of the Packages tab
+        navigate('/create-pkg');
     };
 
     return (
@@ -165,106 +193,62 @@ function ISPDetails() {
             )}
             {/* Invoice Item */}
             {tabValue === 1 && (
-                <Paper
-                    elevation={1}
-                    sx={{
-                        padding: { xs: 1, sm: 2 },
-                        borderRadius: { xs: 2, md: 3 },
-                        marginY: { xs: 2, md: 4 },
-                        maxWidth: "100%",
-                    }}
-                >
-                    <Grid container spacing={1} alignItems="center">
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Typography variant="subtitle2" color="textSecondary">
-                                Invoice Type
-                            </Typography>
-                            <Typography variant="h6" color="primary" sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
-                                New Connection
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={6} sm={6} md={1}>
-                            <Typography variant="subtitle2" color="textSecondary">
-                                Status
-                            </Typography>
-                            <Typography variant="body2" color="primary">
-                                OPEN
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={6} sm={6} md={2}>
-                            <Typography variant="subtitle2" color="textSecondary">
-                                Total Amount
-                            </Typography>
-                            <Typography variant="h6" color="primary" sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
-                                500
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={6} sm={6} md={1}>
-                            <Typography variant="subtitle2" color="textSecondary">
-                                Paid
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: 'green' }}>
-                                +300
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={6} sm={6} md={1}>
-                            <Typography variant="subtitle2" color="textSecondary">
-                                Discount
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: 'red' }}>
-                                -0
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={6} sm={6} md={1}>
-                            <Typography variant="subtitle2" color="textSecondary">
-                                Remaining
-                            </Typography>
-                            <Typography variant="h6" color="primary" sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
-                                200
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={2}>
-                            <Typography variant="subtitle2" color="textSecondary">
-                                Invoice Date
-                            </Typography>
-                            <Chip
-                                label="13-November-2024 02:14 PM"
-                                sx={{
-                                    backgroundColor: '#e8f5e9',
-                                    color: '#43a047',
-                                    maxWidth: '100%',
-                                    height: 'auto',
-                                    '& .MuiChip-label': {
-                                        whiteSpace: 'normal',
-                                        padding: '8px'
-                                    }
-                                }}
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={1} container justifyContent="flex-end">
-                            <IconButton onClick={() => navigate('/invoice')}>
-                                <ReceiptIcon />
-                            </IconButton>
-                        </Grid>
+                <Grid container spacing={2} mt={2}>
+                    <Box textAlign="right" sx={{ display: 'flex', width: '100%', justifyContent: 'flex-end' }}>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            startIcon={<AddIcon />}
+                            onClick={handleCreatePackage}
+                            sx={{
+                                background: colors.gradientBackground,
+                                '&:hover': { background: colors.gradientBackground },
+                            }}
+                        >
+                            Create Package
+                        </Button>
+                    </Box>
+                    <Grid container spacing={2} mt={2}>
+                        {pkgData.map((pkg, id) => (
+                            <Grid item xs={12} sm={6} md={4} key={id}>
+                                <Paper
+                                    elevation={3}
+                                    sx={{ display: 'flex', borderRadius: 5, flexDirection: 'column', alignItems: 'center', padding: 4, mb: 2, cursor: 'pointer' }}
+                                    onClick={() => handleStaffClick(pkg, id)} // Pass the entire staff member object
+                                >
+                                    <Typography variant="h5" color={colors.primary} sx={{ mb: 1 }}>
+                                        {pkg.name}
+                                    </Typography>
+                                    <Typography variant="secondary" color={colors.secondary} sx={{ mb: 1 }}>
+                                        {pkg.amount}
+                                    </Typography>
+
+                                </Paper>
+                            </Grid>
+                        ))}
                     </Grid>
-                </Paper>
+                </Grid>
             )}
 
             {/* Pagination */}
-            <Box display="flex" justifyContent="center" mt={2}>
-                <Pagination
-                    count={1}
-                    variant="outlined"
-                    shape="rounded"
-                    size="small"
-                    sx={{
-                        '& .MuiPaginationItem-root': {
-                            minWidth: { xs: 30, sm: 40 },
-                            height: { xs: 30, sm: 40 },
-                        }
-                    }}
-                />
-            </Box>
+            {
+                tabValue === 2 && (
+                    <Box display="flex" justifyContent="center" mt={2}>
+                        <Pagination
+                            count={1}
+                            variant="outlined"
+                            shape="rounded"
+                            size="small"
+                            sx={{
+                                '& .MuiPaginationItem-root': {
+                                    minWidth: { xs: 30, sm: 40 },
+                                    height: { xs: 30, sm: 40 },
+                                }
+                            }}
+                        />
+                    </Box>
+                )
+            }
         </Box>
     );
 }

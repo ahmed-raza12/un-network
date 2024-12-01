@@ -15,9 +15,7 @@ function AddCustomer() {
   const [isp, setIsp] = useState('');
   const [packageType, setPackageType] = useState('');
   const [amountPaid, setAmountPaid] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [userName, setUserName] = useState('');
   const [voucherNumber, setVoucherNumber] = useState('');
 
   const dispatch = useDispatch();
@@ -33,8 +31,7 @@ function AddCustomer() {
       isp,
       packageType,
       amountPaid,
-      username,
-      password,
+      userName,
       voucherNumber,
     };
 
@@ -171,41 +168,15 @@ function AddCustomer() {
           />
         </Grid>
         <Grid item xs={6} sx={{ mt: 2 }}>
-          <Typography sx={{ color: colors.primary }}>Username</Typography>
+          <Typography sx={{ color: colors.primary }}>User Name</Typography>
           <TextField
             sx={TextFieldStyle}
-            placeholder="Username"
+            placeholder="UM100"
             fullWidth
             variant="outlined"
             size="small"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-        </Grid>
-        <Grid item xs={6} sx={{ mt: 2 }}>
-          <Typography sx={{ color: colors.primary }}>Password</Typography>
-          <TextField
-            sx={TextFieldStyle}
-            type="password"
-            placeholder="Password"
-            fullWidth
-            variant="outlined"
-            size="small"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </Grid>
-        <Grid item xs={6} sx={{ mt: 2 }}>
-          <Typography sx={{ color: colors.primary }}>Confirm Password</Typography>
-          <TextField
-            sx={TextFieldStyle}
-            type="password"
-            placeholder="Confirm Password"
-            fullWidth
-            variant="outlined"
-            size="small"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
           />
         </Grid>
         <Grid item xs={6} sx={{ mt: 2 }}>

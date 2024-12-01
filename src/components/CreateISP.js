@@ -1,9 +1,17 @@
 import React, { useState } from 'react';
-import { Box, Grid, TextField, Button, Typography } from '@mui/material';
-import { useDispatch, useSelector } from 'react-redux';
+import {
+    Box,
+    Paper,
+    TextField,
+    Button,
+    Typography,
+    Grid,
+    CircularProgress
+} from '@mui/material';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { addISP } from '../store/actions/ispActions';
 import colors from '../colors';
-import { addStaff } from '../store/actions/staffActions'; // Import your action for adding staff
-
 
 export const TextFieldStyle = {
     backgroundColor: 'white',
@@ -20,106 +28,163 @@ export const TextFieldStyle = {
             borderWidth: 1,
         },
     },
-}
-function CreateISP() {
-    const [ispName, setIspName] = useState('');
-    const [supportNumber, setSupportNumber] = useState('');
-    const [salesNumber, setSalesNumber] = useState('');
-    const [supportEmail, setSupportEmail] = useState('');
-    const [salesEmail, setSalesEmail] = useState('');
-    const dealerId = useSelector((state) => state.auth.user.uid)
+};
+
+const CreateISP = () => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const [loading, setLoading] = useState(false);
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        city: '',
+        country: '',
+        package: '',
+        status: 'Active'
+    });
 
-    const handleSubmit = () => {
-        const staffData = {
-            ispName,
-            salesNumber,
-            salesEmail,
-            supportNumber,
-            supportEmail,
-        };
+    const handleChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
+        });
+    };
 
-        // dispatch(addStaff(supportEmail, password, staffData, dealerId)); // Dispatch action to add staff
-        // localStorage.setItem('staffData', JSON.stringify(staffData)); // Optionally save to local storage
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            await dispatch(addISP(formData));
+            navigate('/isp');
+        } catch (error) {
+            console.error('Error creating ISP:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <Box mt={80} sx={{ backgroundColor: '#f4f6fd', padding: 4, borderRadius: 2, maxWidth: "auto", margin: 'auto' }}>
-            <Grid container spacing={2}>
-                <Grid item xs={6} sx={{ mt: 2 }}>
-                    <Typography sx={{ color: colors.primary }}>ISP Name</Typography>
-                    <TextField
-                        sx={TextFieldStyle}
-                        placeholder="John"
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        value={ispName}
-                        onChange={(e) => setIspName(e.target.value)}
-                    />
-                </Grid>
-                <Grid item xs={6} sx={{ mt: 2 }}>
-                    <Typography sx={{ color: colors.primary }}>Support Email</Typography>
-                    <TextField
-                        sx={TextFieldStyle}
-                        placeholder="Support Email"
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        value={supportEmail}
-                        onChange={(e) => setSupportEmail(e.target.value)}
-                    />
-                </Grid>
-                <Grid item xs={6} sx={{ mt: 2 }}>
-                    <Typography sx={{ color: colors.primary }}>Sales Email</Typography>
-                    <TextField
-                        sx={TextFieldStyle}
-                        placeholder="Sales Email"
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        value={salesEmail}
-                        onChange={(e) => setSalesEmail(e.target.value)}
-                    />
-                </Grid>
+        <Box sx={{ p: 3 }}>
+            <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.default' }}>
+                <Typography variant="h5" sx={{ mb: 3, color: colors.primary }}>
+                    Create New ISP
+                </Typography>
 
-                <Grid item xs={6} sx={{ mt: 2 }}>
-                    <Typography sx={{ color: colors.primary }}>Support Number</Typography>
-                    <TextField
-                        sx={TextFieldStyle}
-                        placeholder="03001234567"
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        value={supportNumber}
-                        onChange={(e) => setSupportNumber(e.target.value)}
-                    />
-                </Grid>
-                <Grid item xs={6} sx={{ mt: 2 }}>
-                    <Typography sx={{ color: colors.primary }}>Sales Number</Typography>
-                    <TextField
-                        sx={TextFieldStyle}
-                        placeholder="03001234567"
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        value={supportNumber}
-                        onChange={(e) => setSupportNumber(e.target.value)}
-                    />
-                </Grid>
-            </Grid>
-            <Box display="flex" alignItems="center" justifyContent={"center"} mt={5} mb={2}>
-                <Button
-                    variant="contained"
-                    //   color="primary"
-                    onClick={handleSubmit}
-                    style={{ marginLeft: '10px', backgroundColor: colors.primary }}
-                >
-                    Create ISP
-                </Button>
-            </Box>
+                <form onSubmit={handleSubmit}>
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="ISP Name"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleChange}
+                                required
+                                sx={TextFieldStyle}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Email"
+                                name="email"
+                                type="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                required
+                                sx={TextFieldStyle}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Phone"
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleChange}
+                                required
+                                sx={TextFieldStyle}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Package"
+                                name="package"
+                                value={formData.package}
+                                onChange={handleChange}
+                                required
+                                sx={TextFieldStyle}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                label="Address"
+                                name="address"
+                                value={formData.address}
+                                onChange={handleChange}
+                                required
+                                sx={TextFieldStyle}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="City"
+                                name="city"
+                                value={formData.city}
+                                onChange={handleChange}
+                                required
+                                sx={TextFieldStyle}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Country"
+                                name="country"
+                                value={formData.country}
+                                onChange={handleChange}
+                                required
+                                sx={TextFieldStyle}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                                <Button
+                                    variant="outlined"
+                                    onClick={() => navigate('/isp')}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    disabled={loading}
+                                    sx={{
+                                        background: colors.gradientBackground,
+                                        '&:hover': { background: colors.gradientBackground }
+                                    }}
+                                >
+                                    {loading ? <CircularProgress size={24} /> : 'Create ISP'}
+                                </Button>
+                            </Box>
+                        </Grid>
+                    </Grid>
+                </form>
+            </Paper>
         </Box>
     );
-}
+};
 
-export default CreateISP; 
+export default CreateISP;

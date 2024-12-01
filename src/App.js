@@ -24,6 +24,7 @@ import DueCustomers from './components/DueCustomers';
 import ISP from './components/ISP';
 import CreateISP from './components/CreateISP';
 import ISPDetails from './components/ISPDetails';
+import CreatePkg from './components/CreatePkg';
 
 // Initialize Firebase
 initializeApp(firebaseConfig);
@@ -40,7 +41,7 @@ const App = () => {
   };
 
   return (
-    <Router>
+    <Router> 
       {/* Uncomment the AppBar if you want to use it */}
       {/* {isLoggedIn && (
         <AppBar position="static" sx={{ boxShadow: 3 }}>
@@ -97,7 +98,7 @@ const App = () => {
                 <Route path="/isp" element={<ProtectedRoute element={<ISP />} allowedRoles={['admin', 'dealer', 'staff']} />} />
                 <Route path="/create-isp" element={<ProtectedRoute element={<CreateISP />} allowedRoles={['admin', 'dealer', 'staff']} />} />
                 <Route path="/isp-details/:id" element={<ProtectedRoute element={<ISPDetails />} allowedRoles={['admin', 'dealer', 'staff']} />} />
-                
+                <Route path="/create-pkg" element={<CreatePkg />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/not-authorized" element={<NotAuthorized />} /> {/* Create a NotAuthorized component */}
               </Route>

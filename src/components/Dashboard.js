@@ -16,12 +16,13 @@ import BusinessIcon from '@mui/icons-material/Business'; // For Dealers
 import GroupIcon from '@mui/icons-material/Group'; // For Staff
 import Groups2 from '@mui/icons-material/Groups2';
 import ReportIcon from '@mui/icons-material/Report';
+import DeleteAllUsers from './DeleteAllUsers'; // Import DeleteAllUsers component
 const drawerWidth = 240;
 
 function Dashboard() {
     const dispatch = useDispatch();
     const [selectedIndex, setSelectedIndex] = useState(0); // State for selected tab
-
+    const role = useSelector(state => state.auth.user.role); // Get user role from Redux state
     //   const isLoggedIn = useSelector(state => state.auth.isLoggedIn); // Get login status from Redux state
 
     const handleLogout = () => {

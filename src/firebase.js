@@ -5,6 +5,7 @@ import "firebase/auth"; // If using Firebase Authentication
 import "firebase/firestore"; // If using Firestore database
 import { getFirestore } from 'firebase/firestore';
 import { getDatabase } from 'firebase/database';
+import { getAuth } from "firebase/auth";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -19,11 +20,13 @@ export const firebaseConfig = {
   storageBucket: "business-management-app-70a93.firebasestorage.app",
   messagingSenderId: "861187083442",
   appId: "1:861187083442:web:677d064945d50fd4a4cdab",
-  measurementId: "G-FKVVD8MVVX"};
+  measurementId: "G-FKVVD8MVVX"
+};
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const db = getDatabase(app);
+const auth = getAuth();
 
-export { db };
+export { db, auth };
