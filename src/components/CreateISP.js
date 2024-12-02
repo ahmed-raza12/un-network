@@ -9,7 +9,7 @@ import {
     CircularProgress
 } from '@mui/material';
 import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { addISP } from '../store/actions/ispActions';
 import colors from '../colors';
 
@@ -33,6 +33,8 @@ export const TextFieldStyle = {
 const CreateISP = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
+    const dealerId = location.state?.dealerId;
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
@@ -56,7 +58,17 @@ const CreateISP = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            await dispatch(addISP(formData));
+            const ispData = {
+                id: Date.now().toString(),
+                name: formData.name,
+                email: formData.email,
+                phone: formData.phone,
+                address: formData.address,
+                city: formData.city,
+                country: formData.country
+            };
+
+            await dispatch(addISP(ispData, dealerId));
             navigate('/isp');
         } catch (error) {
             console.error('Error creating ISP:', error);
@@ -89,70 +101,9 @@ const CreateISP = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="Email"
-                                name="email"
-                                type="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                required
-                                sx={TextFieldStyle}
-                                size="small"
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                fullWidth
-                                label="Phone"
-                                name="phone"
-                                value={formData.phone}
-                                onChange={handleChange}
-                                required
-                                sx={TextFieldStyle}
-                                size="small"
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                fullWidth
                                 label="Package"
                                 name="package"
                                 value={formData.package}
-                                onChange={handleChange}
-                                required
-                                sx={TextFieldStyle}
-                                size="small"
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                fullWidth
-                                label="Address"
-                                name="address"
-                                value={formData.address}
-                                onChange={handleChange}
-                                required
-                                sx={TextFieldStyle}
-                                size="small"
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                fullWidth
-                                label="City"
-                                name="city"
-                                value={formData.city}
-                                onChange={handleChange}
-                                required
-                                sx={TextFieldStyle}
-                                size="small"
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                fullWidth
-                                label="Country"
-                                name="country"
-                                value={formData.country}
                                 onChange={handleChange}
                                 required
                                 sx={TextFieldStyle}

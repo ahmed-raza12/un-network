@@ -14,11 +14,19 @@ function CreateStaff() {
   const [password, setPassword] = useState('');
   const [address, setAddress] = useState('');
   const [designation, setDesignation] = useState('');
-  const dealerId = useSelector((state) => state.auth.user.uid)
+  const role = useSelector((state) => state.auth.user.role);
+  const dealerId = useSelector((state) => state.auth.user.uid);
+  const selectedDealerId = role === 'admin' ? localStorage.getItem('selectedDealerStaff') : dealerId;
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const handleSubmit = () => {
+    console.log('Selected Dealer ID:', selectedDealerId);
+    if (role === 'admin' && !selectedDealerId) {
+      alert('Please select a dealer first');
+      return;
+    }
+
     const staffData = {
       firstName,
       lastName,
@@ -30,7 +38,7 @@ function CreateStaff() {
       role: "staff"
     };
 
-    dispatch(addStaff(email, password, staffData, dealerId)); // Dispatch action to add staff
+    dispatch(addStaff(email, password, staffData, selectedDealerId)); // Dispatch action to add staff
     // localStorage.setItem('staffData', JSON.stringify(staffData)); // Optionally save to local storage
   };
 
@@ -127,6 +135,7 @@ function CreateStaff() {
             <Button
               type="submit"
               variant="contained"
+              onClick={handleSubmit}
               sx={{
                 background: colors.gradientBackground,
                 '&:hover': { background: colors.gradientBackground }
@@ -141,4 +150,4 @@ function CreateStaff() {
   );
 }
 
-export default CreateStaff; 
+export default CreateStaff;

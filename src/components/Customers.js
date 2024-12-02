@@ -27,7 +27,8 @@ import {
     CircularProgress
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-import { Search, Link, Public, Edit, Delete } from '@mui/icons-material';
+
+import { Search, Link, Public, Edit, Delete, AddIcCallOutlined } from '@mui/icons-material';
 import { fetchCustomers, fetchCustomersByDealerId, updateCustomer, deleteCustomer } from '../store/actions/customerActions';
 import { useNavigate } from 'react-router-dom';
 import colors from '../colors';
@@ -185,6 +186,17 @@ function Customers() {
     return (
         <Box sx={{ width: '100%', p: 3 }}>
             <Paper sx={{ width: '100%', mb: 2, p: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        startIcon={<AddIcCallOutlined />}
+                        onClick={() => navigate('/add-customer')}
+                    >
+                        Create New Customer
+                    </Button>
+                </Box>
+
                 <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
                     {role === 'admin' && (
                         <FormControl sx={{ minWidth: 200 }}>
@@ -195,7 +207,7 @@ function Customers() {
                                 label="Select Dealer"
                                 disabled={isLoading}
                             >
-                                <MenuItem value="">All Dealers</MenuItem>
+                                {/* <MenuItem value="">All Dealers</MenuItem> */}
                                 {allDealers?.map((dealer) => (
                                     <MenuItem key={dealer.uid} value={dealer.uid}>
                                         {dealer.dealerName || dealer.email}

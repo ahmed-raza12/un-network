@@ -28,7 +28,7 @@ import {
     CalendarToday,
     AddIcCallOutlined
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import colors from '../colors';
 import { tab } from '@testing-library/user-event/dist/tab';
 
@@ -47,6 +47,7 @@ function ISPDetails() {
         return savedTab ? parseInt(savedTab) : 0;
     });
     const navigate = useNavigate()
+    const location = useLocation()
 
     const pkgData = [
         { name: 'DT-1MB', amount: 1200 },
@@ -105,89 +106,127 @@ function ISPDetails() {
             {tabValue === 0 && (
                 <Box sx={{
                     display: 'flex',
-                    flexDirection: { xs: 'column', md: 'row' },
+                    flexDirection: 'column',
                     gap: 2,
                     p: { xs: 1, sm: 2, md: 4 }
                 }}>
                     <Box sx={{
-                        width: { xs: '100%', md: '50%' }
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        gap: 2,
+                        mb: 2
                     }}>
-                        <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, bgcolor: 'background.default', width: '100%' }}>
-                            <List>
-                                <ListItem>
-                                    <ListItemIcon>
-                                        <Phone sx={{ color: 'darkblue' }} />
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary="Connection Details"
-                                        secondary="03030668886"
-                                        secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                    />
-                                </ListItem>
-
-                                <ListItem>
-                                    <ListItemIcon>
-                                        <Person sx={{ color: 'darkblue' }} />
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary="Address"
-                                        secondary="hghnb,1234"
-                                        secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                    />
-                                </ListItem>
-
-                                <ListItem>
-                                    <ListItemIcon>
-                                        <CalendarToday sx={{ color: 'darkblue' }} />
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary="Last Recharge"
-                                        secondary="13-11-24"
-                                        secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                    />
-                                </ListItem>
-                            </List>
-                        </Paper>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => navigate('/edit-isp', { state: { isp: location.state } })}
+                            sx={{
+                                bgcolor: colors.primary,
+                                '&:hover': { bgcolor: colors.secondary }
+                            }}
+                        >
+                            Edit ISP
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="error"
+                            onClick={() => {
+                                if (window.confirm('Are you sure you want to delete this ISP?')) {
+                                    // Dispatch delete action
+                                    // dispatch(deleteISP(location.state.id));
+                                    navigate('/isp');
+                                }
+                            }}
+                        >
+                            Delete ISP
+                        </Button>
                     </Box>
                     <Box sx={{
-                        width: { xs: '100%', md: '50%' }
+                        display: 'flex',
+                        flexDirection: { xs: 'column', md: 'row' },
+                        gap: 2,
+                        p: { xs: 1, sm: 2, md: 4 }
                     }}>
-                        <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, bgcolor: 'background.default', width: '100%' }}>
-                            <List>
-                                <ListItem>
-                                    <ListItemIcon>
-                                        <Badge sx={{ color: 'darkblue' }} />
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary="Total Package Price"
-                                        secondary="500"
-                                        secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                    />
-                                </ListItem>
+                        <Box sx={{
+                            width: { xs: '100%', md: '50%' }
+                        }}>
+                            <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, bgcolor: 'background.default', width: '100%' }}>
+                                <List>
+                                    <ListItem>
+                                        <ListItemIcon>
+                                            <Phone sx={{ color: 'darkblue' }} />
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary="Connection Details"
+                                            secondary="03030668886"
+                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                        />
+                                    </ListItem>
 
-                                <ListItem>
-                                    <ListItemIcon>
-                                        <Wallet sx={{ color: 'darkblue' }} />
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary="Abatement (Discount)"
-                                        secondary="None"
-                                        secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                    />
-                                </ListItem>
+                                    <ListItem>
+                                        <ListItemIcon>
+                                            <Person sx={{ color: 'darkblue' }} />
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary="Address"
+                                            secondary="hghnb,1234"
+                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                        />
+                                    </ListItem>
 
-                                <ListItem>
-                                    <ListItemIcon>
-                                        <Wallet sx={{ color: 'darkblue' }} />
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary="ReceiveAble Amount"
-                                        secondary="500/-"
-                                        secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                    />
-                                </ListItem>
-                            </List>
-                        </Paper>
+                                    <ListItem>
+                                        <ListItemIcon>
+                                            <CalendarToday sx={{ color: 'darkblue' }} />
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary="Last Recharge"
+                                            secondary="13-11-24"
+                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                        />
+                                    </ListItem>
+                                </List>
+                            </Paper>
+                        </Box>
+                        <Box sx={{
+                            width: { xs: '100%', md: '50%' }
+                        }}>
+                            <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, bgcolor: 'background.default', width: '100%' }}>
+                                <List>
+                                    <ListItem>
+                                        <ListItemIcon>
+                                            <Badge sx={{ color: 'darkblue' }} />
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary="Total Package Price"
+                                            secondary="500"
+                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                        />
+                                    </ListItem>
+
+                                    <ListItem>
+                                        <ListItemIcon>
+                                            <Wallet sx={{ color: 'darkblue' }} />
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary="Abatement (Discount)"
+                                            secondary="None"
+                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                        />
+                                    </ListItem>
+
+                                    <ListItem>
+                                        <ListItemIcon>
+                                            <Wallet sx={{ color: 'darkblue' }} />
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary="ReceiveAble Amount"
+                                            secondary="500/-"
+                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                        />
+                                    </ListItem>
+                                </List>
+                            </Paper>
+                        </Box>
                     </Box>
                 </Box>
             )}

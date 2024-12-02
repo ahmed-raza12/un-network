@@ -79,37 +79,32 @@ export const fetchCustomers = (page = 1, searchQuery = '') => async (dispatch, g
 
 export const fetchCustomersByDealerId = (dealerId, page = 1, searchQuery = '') => async (dispatch) => {
     try {
+        dispatch({ type: 'SET_LOADING', payload: true });
+
         if (!dealerId) {
-                dispatch({
-                    type: FETCH_CUSTOMERS_SUCCESS,
+            dispatch({
+                type: FETCH_CUSTOMERS_SUCCESS,
                 payload: {
                     customers: [],
                     totalPages: 0,
                     currentPage: 1,
-                    totalCustomers: 0,
-                },
-                });
-                return;
-            }
-
-        // Try to get customers from localStorage first
-        let allCustomers = JSON.parse(localStorage.getItem(`customers_${dealerId}`));
-        
-        // If not in localStorage, fetch from database
-        if (!allCustomers) {
-            const customersRef = query(ref(db, `customers/${dealerId}`), orderByKey());
-            const snapshot = await get(customersRef);
-            allCustomers = snapshot.exists() 
-                ? Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }))
-                : [];
-            
-            // Store in localStorage
-            localStorage.setItem(`customers_${dealerId}`, JSON.stringify(allCustomers));
+                    totalCustomers: 0
+                }
+            });
+            dispatch({ type: 'SET_LOADING', payload: false });
+            return;
         }
 
-        // Ensure allCustomers is an array
-        if (!Array.isArray(allCustomers)) {
-            allCustomers = [];
+        console.log(`Fetching customers for dealer ID: ${dealerId}`);
+        const customersRef = ref(db, `customers/${dealerId}`);
+        const snapshot = await get(customersRef);
+        
+        let allCustomers = [];
+        if (snapshot.exists()) {
+            allCustomers = Object.entries(snapshot.val()).map(([id, data]) => ({
+                id,
+                ...data
+            }));
         }
 
         // Get paginated data
@@ -117,44 +112,56 @@ export const fetchCustomersByDealerId = (dealerId, page = 1, searchQuery = '') =
 
         dispatch({
             type: FETCH_CUSTOMERS_SUCCESS,
-            payload: paginatedData
+            payload: {
+                customers: paginatedData.customers,
+                totalPages: paginatedData.totalPages,
+                currentPage: page,
+                totalCustomers: allCustomers.length
+            }
         });
+
+        // Update localStorage after successful fetch
+        localStorage.setItem(`customers_${dealerId}`, JSON.stringify(allCustomers));
+        
     } catch (error) {
-        console.error("Error fetching customers by dealer: ", error);
+        console.error('Error fetching customers:', error);
         dispatch({
             type: FETCH_CUSTOMERS_FAILURE,
-            payload: error.message,
+            payload: error.message
         });
+    } finally {
+        dispatch({ type: 'SET_LOADING', payload: false });
     }
 };
 
-export const addCustomer = (customer) => async (dispatch, getState) => {
+export const addCustomer = (customerData, dealerId) => async (dispatch, getState) => {
     try {
-        const dealerId = getState().auth.user.role === 'staff' ? getState().auth.user.dealerId : getState().auth.user.uid;
+        dispatch({ type: 'SET_LOADING', payload: true });
         
-        // Add to database
-        const customerRef = ref(db, `customers/${dealerId}`);
-        const newCustomerRef = push(customerRef);
+        const customersRef = ref(db, `customers/${dealerId}`);
+        const newCustomerRef = push(customersRef);
+        
+        const customer = {
+            ...customerData,
+            dealerId,
+            createdAt: new Date().toISOString(),
+        };
+        
         await set(newCustomerRef, customer);
-
-        // Update localStorage
-        const allCustomers = JSON.parse(localStorage.getItem(`customers_${dealerId}`)) || [];
-        allCustomers.push({ id: newCustomerRef.key, ...customer });
-        localStorage.setItem(`customers_${dealerId}`, JSON.stringify(allCustomers));
-
+        
         dispatch({
             type: ADD_CUSTOMER_SUCCESS,
             payload: { id: newCustomerRef.key, ...customer },
         });
-
-        // Refresh the customer list
-        dispatch(fetchCustomers(1));
+        
+        dispatch({ type: 'SET_LOADING', payload: false });
     } catch (error) {
         console.error("Error adding customer: ", error);
         dispatch({
             type: ADD_CUSTOMER_FAILURE,
             payload: error.message,
         });
+        dispatch({ type: 'SET_LOADING', payload: false });
     }
 };
 

@@ -25,6 +25,7 @@ import ISP from './components/ISP';
 import CreateISP from './components/CreateISP';
 import ISPDetails from './components/ISPDetails';
 import CreatePkg from './components/CreatePkg';
+import UserProfile from './components/UserProfile';
 
 // Initialize Firebase
 initializeApp(firebaseConfig);
@@ -99,6 +100,8 @@ const App = () => {
                 <Route path="/create-isp" element={<ProtectedRoute element={<CreateISP />} allowedRoles={['admin', 'dealer', 'staff']} />} />
                 <Route path="/isp-details/:id" element={<ProtectedRoute element={<ISPDetails />} allowedRoles={['admin', 'dealer', 'staff']} />} />
                 <Route path="/create-pkg" element={<CreatePkg />} />
+                <Route path="/profile" element={<UserProfile />} />
+                
                 <Route path="/login" element={<Login />} />
                 <Route path="/not-authorized" element={<NotAuthorized />} /> {/* Create a NotAuthorized component */}
               </Route>
@@ -111,5 +114,6 @@ const App = () => {
     </Router>
   );
 };
+
 
 export default App;

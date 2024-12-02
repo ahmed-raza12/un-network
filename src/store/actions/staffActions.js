@@ -11,6 +11,8 @@ export const UPDATE_STAFF_FAILURE = "UPDATE_STAFF_FAILURE";
 export const DELETE_STAFF_SUCCESS = "DELETE_STAFF_SUCCESS";
 export const DELETE_STAFF_FAILURE = "DELETE_STAFF_FAILURE";
 export const FETCH_STAFF_ERROR = "FETCH_STAFF_ERROR";
+export const SET_MESSAGE = "SET_MESSAGE";
+export const SET_ERROR = "SET_ERROR";
 
 // Action to add staff
 export const addStaff = (email, password, staffData, dealerId) => async (dispatch, getState) => {
@@ -26,7 +28,7 @@ export const addStaff = (email, password, staffData, dealerId) => async (dispatc
         const userId = getState().auth.user.uid;
         
         // Add staff data under the logged-in user's node
-        const staffRef = ref(db, `staff/${userId}`);
+        const staffRef = ref(db, `staff/${dealerId}`);
         const newStaffRef = push(staffRef);
         await set(newStaffRef, { uid: user.uid, ...staffData });
 
@@ -105,26 +107,45 @@ export const fetchStaffByDealerId = (dealerId) => async (dispatch) => {
 };
 
 // Action to update staff
-export const updateStaff = (staffId, staffData) => async (dispatch, getState) => {
+export const updateStaff = (staffData) => async (dispatch, getState) => {
     try {
-        const dealerId = getState().auth.user.uid;
+        console.log(staffData);
+        const dealerId = staffData.dealerId;
+        const staffRef = ref(db, `staff/${dealerId}/${staffData.id}`);
         
-        // Update staff data
-        const staffRef = ref(db, `staff/${dealerId}/${staffId}`);
+        // Update staff data in Firebase
         await set(staffRef, staffData);
 
-        // Update user role data
+        // Update user data in Firebase Authentication
         const userRef = ref(db, `users/${staffData.uid}`);
-        await set(userRef, { 
-            role: 'staff', 
-            dealerId, 
-            staffData 
+        await set(userRef, {
+            role: 'staff',
+            dealerId,
+            userData: staffData
         });
 
-        dispatch({ type: UPDATE_STAFF_SUCCESS, payload: { id: staffId, ...staffData } });
+        dispatch({
+            type: UPDATE_STAFF_SUCCESS,
+            payload: staffData
+        });
+
+        // Show success message
+        dispatch({
+            type: SET_MESSAGE,
+            payload: 'Staff updated successfully'
+        });
     } catch (error) {
-        console.error("Error updating staff: ", error);
-        dispatch({ type: UPDATE_STAFF_FAILURE, payload: error.message });
+        console.error('Error updating staff:', error);
+        dispatch({
+            type: UPDATE_STAFF_FAILURE,
+            payload: error.message
+        });
+        
+        // Show error message
+        dispatch({
+            type: SET_ERROR,
+            payload: 'Failed to update staff'
+        });
     }
 };
 

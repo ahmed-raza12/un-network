@@ -1,6 +1,8 @@
 const initialState = {
   isLoggedIn: false,
   user: null,
+  loading: false,
+  error: null
 };
 
 // Load initial state from local storage
@@ -16,18 +18,33 @@ const authReducer = (state = loadState(), action) => {
         ...state,
         isLoggedIn: true,
         user: action.payload,
+        error: null
       };
       localStorage.setItem('authState', JSON.stringify(newState)); // Save to local storage
       return newState;
     case 'LOGOUT':
-      // Object.keys(localStorage).forEach(key => {
-      //   localStorage.removeItem(key);
-      // });
       localStorage.removeItem('authState'); // Remove from local storage
       return {
         ...state,
         isLoggedIn: false,
         user: null,
+        error: null
+      };
+    case 'UPDATE_PROFILE_SUCCESS':
+      const updatedState = {
+        ...state,
+        user: {
+          ...state.user,
+          ...action.payload
+        },
+        error: null
+      };
+      localStorage.setItem('authState', JSON.stringify(updatedState)); // Save to local storage
+      return updatedState;
+    case 'UPDATE_PROFILE_FAILURE':
+      return {
+        ...state,
+        error: action.payload
       };
     default:
       return state;

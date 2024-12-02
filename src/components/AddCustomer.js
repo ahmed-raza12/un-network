@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Grid, TextField, Button, Typography, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { addCustomer } from '../store/actions/customerActions';
 import colors from '../colors';
 import { TextFieldStyle } from './CreateISP';
@@ -19,8 +19,16 @@ function AddCustomer() {
   const [voucherNumber, setVoucherNumber] = useState('');
 
   const dispatch = useDispatch();
+  const role = useSelector((state) => state.auth.user.role);
+  const dealerId = useSelector((state) => state.auth.user.uid);
+  const selectedDealerId = role === 'admin' ? localStorage.getItem('selectedDealer') : dealerId;
 
   const handleSubmit = () => {
+    if (role === 'admin' && !selectedDealerId) {
+      alert('Please select a dealer first');
+      return;
+    }
+
     const customerData = {
       firstName,
       lastName,
@@ -35,7 +43,7 @@ function AddCustomer() {
       voucherNumber,
     };
 
-    dispatch(addCustomer(customerData));
+    dispatch(addCustomer(customerData, selectedDealerId));
     localStorage.setItem('customerData', JSON.stringify(customerData));
   };
 

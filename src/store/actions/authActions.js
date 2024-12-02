@@ -1,3 +1,8 @@
+
+
+import { ref, set, } from 'firebase/database';
+import { db } from '../../firebase';
+
 export const login = (credentials) => {
   return async (dispatch) => {
     try {
@@ -33,4 +38,54 @@ export const logout = () => {
       console.error('Error during logout:', error);
     }
   };
+};
+
+export const UPDATE_PROFILE_SUCCESS = 'UPDATE_PROFILE_SUCCESS';
+export const UPDATE_PROFILE_FAILURE = 'UPDATE_PROFILE_FAILURE';
+
+export const updateProfile = (userData) => {
+    return async (dispatch) => {
+        try {
+            const { uid } = userData;
+            const userRef = ref(db, `users/${uid}`);
+            
+            // Update user data in Firebase
+            await set(userRef, {
+                ...userData,
+                updatedAt: new Date().toISOString()
+            });
+
+            // If user is staff or dealer, update their respective collections
+            if (userData.role === 'staff') {
+                const staffRef = ref(db, `staff/${userData.dealerId}/${uid}`);
+                await set(staffRef, userData);
+            } else if (userData.role === 'dealer') {
+                const dealerRef = ref(db, `dealers/${uid}`);
+                await set(dealerRef, userData);
+            }
+
+            dispatch({
+                type: UPDATE_PROFILE_SUCCESS,
+                payload: userData
+            });
+
+            // Show success message
+            dispatch({
+                type: 'SET_MESSAGE',
+                payload: 'Profile updated successfully'
+            });
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            dispatch({
+                type: UPDATE_PROFILE_FAILURE,
+                payload: error.message
+            });
+            
+            // Show error message
+            dispatch({
+                type: 'SET_ERROR',
+                payload: 'Failed to update profile'
+            });
+        }
+    };
 };

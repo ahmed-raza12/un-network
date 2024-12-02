@@ -9,7 +9,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import PeopleIcon from '@mui/icons-material/People';
-import { Outlet, Link, useLocation } from 'react-router-dom'; // Import useLocation
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'; // Import useLocation
 import { logout } from '../store/actions/authActions';
 import { useDispatch, useSelector } from 'react-redux'; // Import useSelector
 import colors from '../colors'; // Import colors
@@ -20,7 +20,6 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import ReportIcon from '@mui/icons-material/Report';
 import MenuIcon from '@mui/icons-material/Menu';
 import loginLogo from '../assets/panel_logo.png';
-
 const drawerWidth = 240;
 
 function SidebarLayout() {
@@ -32,7 +31,7 @@ function SidebarLayout() {
     const userRole = useSelector((state) => state.auth.user?.role); // Get user role from state
     const userData = useSelector((state) => state.auth.user?.userData); // Get user data from state
     const name = userRole === 'staff' ? userData.firstName : userData.name;
-
+    const navigate = useNavigate();
     const toggleDrawer = () => {
         setDrawerOpen(!drawerOpen); // Toggle drawer state
     };
@@ -42,6 +41,11 @@ function SidebarLayout() {
         // Optionally, you can also sign out from Firebase
         // const auth = getAuth();
         // auth.signOut();
+    };
+
+    const handleProfile = () => {
+        navigate('/profile'); // Navigate to profile page
+        handleMenuClose();
     };
 
     const items = [
@@ -263,7 +267,7 @@ function SidebarLayout() {
                                 },
                             }}
                         >
-                            <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
+                            <MenuItem onClick={handleProfile}>Profile</MenuItem>
                             <MenuItem onClick={handleLogout}>Logout</MenuItem>
                         </Menu>
                         {/* Icons */}

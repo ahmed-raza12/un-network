@@ -126,7 +126,7 @@ const StaffList = () => {
     };
 
     const handleStaffClick = (staffMember) => {
-        navigate(`/staff-profile/${staffMember.id}`, { state: staffMember });
+        navigate(`/staff-profile/${staffMember.id}`, { state: {...staffMember, dealerId: selectedDealer } });
     };
 
     const handleDealerChange = (event) => {
@@ -194,37 +194,15 @@ const StaffList = () => {
                                         }
                                     }}
                                     onClick={() => handleStaffClick(staffMember)}
+                                >   <Avatar
+                                    sx={{
+                                        width: 120,
+                                        height: 120,
+                                        mb: 2,
+                                        bgcolor: colors.primary,
+                                        fontSize: '2.5rem'
+                                    }}
                                 >
-                                    {/* Edit and Delete Icons */}
-                                    <Box sx={{ position: 'absolute', top: 10, right: 10, display: 'flex', gap: 1 }}>
-                                        <Tooltip title="Edit Staff">
-                                            <IconButton
-                                                size="small"
-                                                onClick={(e) => handleEditClick(e, staffMember)}
-                                                sx={{ color: colors.primary }}
-                                            >
-                                                <EditIcon />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title="Delete Staff">
-                                            <IconButton
-                                                size="small"
-                                                onClick={(e) => handleDeleteClick(e, staffMember)}
-                                                sx={{ color: 'error.main' }}
-                                            >
-                                                <DeleteIcon />
-                                            </IconButton>
-                                        </Tooltip>
-                                    </Box>
-                                    <Avatar
-                                        sx={{
-                                            width: 120,
-                                            height: 120,
-                                            mb: 2,
-                                            bgcolor: colors.primary,
-                                            fontSize: '2.5rem'
-                                        }}
-                                    >
                                         {staffMember.firstName ? staffMember.firstName.charAt(0).toUpperCase() : 'I'}
 
                                     </Avatar>
@@ -242,119 +220,6 @@ const StaffList = () => {
                         ))}
                     </Grid>
                 )}
-
-                {/* Edit Staff Dialog */}
-                <Dialog
-                    open={editDialogOpen}
-                    onClose={() => setEditDialogOpen(false)}
-                    fullWidth
-                    maxWidth="sm"
-                >
-                    <DialogTitle>
-                        Edit Staff Member
-                        <IconButton
-                            aria-label="close"
-                            onClick={() => setEditDialogOpen(false)}
-                            sx={{ position: 'absolute', right: 8, top: 8 }}
-                        >
-                            <CloseIcon />
-                        </IconButton>
-                    </DialogTitle>
-                    <DialogContent>
-                        <Grid container spacing={2} sx={{ mt: 1 }}>
-                            <Grid item xs={6}>
-                                <TextField
-                                    fullWidth
-                                    label="First Name"
-                                    value={editFormData.firstName}
-                                    onChange={(e) => setEditFormData({ ...editFormData, firstName: e.target.value })}
-                                />
-                            </Grid>
-                            <Grid item xs={6}>
-                                <TextField
-                                    fullWidth
-                                    label="Last Name"
-                                    value={editFormData.lastName}
-                                    onChange={(e) => setEditFormData({ ...editFormData, lastName: e.target.value })}
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <TextField
-                                    fullWidth
-                                    label="Email"
-                                    value={editFormData.email}
-                                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                                />
-                            </Grid>
-                            <Grid item xs={6}>
-                                <TextField
-                                    fullWidth
-                                    label="Phone"
-                                    value={editFormData.phone}
-                                    onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
-                                />
-                            </Grid>
-                            <Grid item xs={6}>
-                                <TextField
-                                    fullWidth
-                                    label="Designation"
-                                    value={editFormData.designation}
-                                    onChange={(e) => setEditFormData({ ...editFormData, designation: e.target.value })}
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <TextField
-                                    fullWidth
-                                    label="Address"
-                                    value={editFormData.address}
-                                    onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <TextField
-                                    fullWidth
-                                    label="Cash"
-                                    type="number"
-                                    value={editFormData.cash}
-                                    onChange={(e) => setEditFormData({ ...editFormData, cash: e.target.value })}
-                                />
-                            </Grid>
-                        </Grid>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-                        <Button
-                            onClick={handleEditSubmit}
-                            variant="contained"
-                            sx={{ bgcolor: colors.primary }}
-                        >
-                            Save Changes
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-
-                {/* Delete Confirmation Dialog */}
-                <Dialog
-                    open={deleteDialogOpen}
-                    onClose={() => setDeleteDialogOpen(false)}
-                >
-                    <DialogTitle>Confirm Delete</DialogTitle>
-                    <DialogContent>
-                        <DialogContentText>
-                            Are you sure you want to delete {staffToDelete?.firstName} {staffToDelete?.lastName}? This action cannot be undone.
-                        </DialogContentText>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-                        <Button
-                            onClick={handleDeleteConfirm}
-                            color="error"
-                            variant="contained"
-                        >
-                            Delete
-                        </Button>
-                    </DialogActions>
-                </Dialog>
             </Paper>
         </Box>
     );
