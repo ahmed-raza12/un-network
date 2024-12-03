@@ -36,6 +36,9 @@ const CreateISP = () => {
     const location = useLocation();
     const dealerId = location.state?.dealerId;
     const [loading, setLoading] = useState(false);
+    const { state } = location;
+    const selectedDealer = state;
+
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -45,6 +48,12 @@ const CreateISP = () => {
         country: '',
         package: '',
         status: 'Active'
+    });
+
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        message: '',
+        severity: ''
     });
 
     const handleChange = (e) => {
@@ -58,20 +67,22 @@ const CreateISP = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const ispData = {
-                id: Date.now().toString(),
-                name: formData.name,
-                email: formData.email,
-                phone: formData.phone,
-                address: formData.address,
-                city: formData.city,
-                country: formData.country
-            };
-
-            await dispatch(addISP(ispData, dealerId));
-            navigate('/isp');
+            const dealerId = state?.selectedDealer;
+            await dispatch(addISP(formData, dealerId));
+            setSnackbar({
+                open: true,
+                message: 'ISP created successfully',
+                severity: 'success'
+            });
+            setTimeout(() => {
+                navigate('/isp');
+            }, 1500);
         } catch (error) {
-            console.error('Error creating ISP:', error);
+            setSnackbar({
+                open: true,
+                message: 'Error creating ISP: ' + error.message,
+                severity: 'error'
+            });
         } finally {
             setLoading(false);
         }
@@ -104,6 +115,66 @@ const CreateISP = () => {
                                 label="Package"
                                 name="package"
                                 value={formData.package}
+                                onChange={handleChange}
+                                required
+                                sx={TextFieldStyle}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                required
+                                sx={TextFieldStyle}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Phone"
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleChange}
+                                required
+                                sx={TextFieldStyle}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Address"
+                                name="address"
+                                value={formData.address}
+                                onChange={handleChange}
+                                required
+                                sx={TextFieldStyle}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="City"
+                                name="city"
+                                value={formData.city}
+                                onChange={handleChange}
+                                required
+                                sx={TextFieldStyle}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Country"
+                                name="country"
+                                value={formData.country}
                                 onChange={handleChange}
                                 required
                                 sx={TextFieldStyle}

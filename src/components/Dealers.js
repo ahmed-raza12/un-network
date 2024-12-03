@@ -25,6 +25,7 @@ function Dealers() {
 
     useEffect(() => {
         const localDealers = localStorage.getItem('dealers');
+        console.log(localDealers, 'localDealers');
         if (localDealers) {
             dispatch({
                 type: 'FETCH_DEALERS_SUCCESS',

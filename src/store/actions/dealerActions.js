@@ -38,6 +38,8 @@ export const registerDealer = (email, password, dealerData, dealerId) => async (
 
 // Action to fetch dealers
 export const fetchDealers = () => async (dispatch) => {
+    let dealers = [];
+    console.log(dealers, 'fetch dealers');
     try {
         const dealerRef = ref(db, 'dealers');
         const snapshot = await get(dealerRef);
@@ -47,6 +49,7 @@ export const fetchDealers = () => async (dispatch) => {
                 id,
                 ...data
             }));
+            localStorage.setItem('dealers', JSON.stringify(dealers));
             dispatch({ type: FETCH_DEALERS_SUCCESS, payload: dealers }); // Dispatch success action
         } else {
             dispatch({ type: FETCH_DEALERS_SUCCESS, payload: [] }); // Dispatch success action with empty list

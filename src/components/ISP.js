@@ -6,6 +6,10 @@ import {
     Button,
     Grid,
     Avatar,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
     CircularProgress
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
@@ -19,11 +23,35 @@ const ISP = () => {
     const [loading, setLoading] = useState(true);
     const isps = useSelector(state => state.isp.isps);
     const error = useSelector(state => state.isp.error);
+    const role = useSelector(state => state.auth.user.role);
+    const [selectedDealer, setSelectedDealer] = useState(() => {
+        const savedDealer = localStorage.getItem('selectedIsp');
+        return savedDealer || '';
+    });
+    const allDealers = useSelector(state => state.dealers.dealers);
+    const isLoading = useSelector((state) => state.dealers.isLoading);
 
+
+    // Effect to persist selected dealer
+    useEffect(() => {
+        if (selectedDealer) {
+            localStorage.setItem('selectedIsp', selectedDealer);
+        }
+    }, [selectedDealer]);
+
+    const handleDealerChange = (event) => {
+        setSelectedDealer(event.target.value);
+    };
     useEffect(() => {
         const loadISPs = async () => {
             try {
-                await dispatch(fetchISPs());
+                // If admin and dealer selected, fetch that dealer's ISPs
+                if (role === 'admin' && selectedDealer) {
+                    await dispatch(fetchISPs(selectedDealer));
+                } else {
+                    // Otherwise fetch ISPs for current user
+                    await dispatch(fetchISPs());
+                }
             } catch (error) {
                 console.error('Error loading ISPs:', error);
             } finally {
@@ -32,10 +60,19 @@ const ISP = () => {
         };
 
         loadISPs();
-    }, [dispatch]);
+    }, [dispatch, selectedDealer, role]);
 
     const handleCreateISP = () => {
-        navigate('/create-isp');
+        if (role === 'admin' && !selectedDealer) {
+            // Show error message if admin hasn't selected a dealer
+            alert('Please select a dealer first');
+            return;
+        }
+        navigate('/create-isp', { 
+            state: { 
+                selectedDealer: role === 'admin' ? selectedDealer : null 
+            } 
+        });
     };
 
     const handleISPClick = (isp) => {
@@ -73,6 +110,23 @@ const ISP = () => {
                     Create ISP
                 </Button>
             </Box>
+            {role === 'admin' && (
+                    <FormControl sx={{ minWidth: 200, mb: 2 }}>
+                        <InputLabel>Select Dealer</InputLabel>
+                        <Select
+                            value={selectedDealer || ''}
+                            onChange={handleDealerChange}
+                            label="Select Dealer"
+                            disabled={isLoading}
+                        >
+                            {allDealers?.map((dealer) => (
+                                <MenuItem key={dealer.uid} value={dealer.uid}>
+                                    {dealer.dealerName || dealer.email}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                )}
             <Grid container spacing={2} mt={2}>
                 {isps.map((isp) => (
                     <Grid item xs={12} sm={6} md={4} key={isp.id}>

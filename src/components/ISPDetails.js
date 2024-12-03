@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Box,
     Container,
@@ -15,7 +15,15 @@ import {
     Tabs,
     Avatar,
     Tab,
-    Paper
+    Paper,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Snackbar,
+    Alert,
+    TextField,
+    CircularProgress
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { styled } from "@mui/material/styles";
@@ -30,7 +38,9 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import colors from '../colors';
-import { tab } from '@testing-library/user-event/dist/tab';
+import { useDispatch } from 'react-redux';
+import { deleteISP, updateISP } from '../store/actions/ispActions';
+import { fetchPackages } from '../store/actions/packageActions';
 
 // Create a styled Tab component
 const StyledTab = styled(Tab)(({ theme }) => ({
@@ -42,25 +52,57 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 
 function ISPDetails() {
     const [tabValue, setTabValue] = React.useState(() => {
-        // Get the saved tab value from localStorage or default to 0
         const savedTab = localStorage.getItem('ispDetailsActiveTab');
         return savedTab ? parseInt(savedTab) : 0;
     });
-    const navigate = useNavigate()
-    const location = useLocation()
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const location = useLocation();
+    // const dealerId = location.state?.dealerId;
+    const { state } = location;
+    const isp = state;
+    console.log(isp);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedData, setEditedData] = useState(isp);
+    const [packages, setPackages] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    const pkgData = [
-        { name: 'DT-1MB', amount: 1200 },
-        { name: 'DT-2MB', amount: 2400 },
-        { name: 'DT-5MB', amount: 6000 },
-        { name: 'DT-10MB', amount: 12000 },
-        { name: 'DT-20MB', amount: 24000 },
-        { name: 'DT-50MB', amount: 60000 },
-        { name: 'DT-100MB', amount: 120000 },
-    ];
+    useEffect(() => {
+        const loadPackages = async () => {
+            setLoading(true);
+            try {
+                const packagesData = await dispatch(fetchPackages(isp.id));
+                // Convert packages object to array and add id to each package
+                const packagesArray = Object.entries(packagesData).map(([id, pkg]) => ({
+                    ...pkg,
+                    id
+                }));
+                setPackages(packagesArray);
+            } catch (error) {
+                console.error('Error loading packages:', error);
+                setError(error.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadPackages();
+    }, [isp.id, dispatch]);
 
-    const handleStaffClick = (staffMember, id) => {
-        navigate(`/isp-details/${staffMember}`, { state: staffMember }); // Pass staff member data
+    const handleStaffClick = (pkg) => {
+        navigate(`/pkg-details/${pkg.id}`, {
+            state: {
+                pkg: {
+                    id: pkg.id,
+                    ispId: isp.id, 
+                    pkgName: pkg.pkgName,
+                    salePrice: pkg.salePrice,
+                    status: pkg.status || 'Active'
+                }
+            }
+        });
     };
     const handleTabChange = (event, newValue) => {
         console.log(newValue);
@@ -73,7 +115,52 @@ function ISPDetails() {
     const handleCreatePackage = () => {
         // Save current tab before navigation
         localStorage.setItem('ispDetailsActiveTab', '1'); // 1 is the index of the Packages tab
-        navigate('/create-pkg');
+        navigate('/create-pkg', {
+            state: {
+                ispId: isp.id
+            }
+        });
+    };
+
+    const handleDelete = async () => {
+        try {
+            await dispatch(deleteISP(isp.id, isp.dealerId));
+            setSnackbar({
+                open: true,
+                message: 'ISP deleted successfully',
+                severity: 'success'
+            });
+            setTimeout(() => {
+                navigate('/isp');
+            }, 1500);
+        } catch (error) {
+            setSnackbar({
+                open: true,
+                message: 'Error deleting ISP: ' + error.message,
+                severity: 'error'
+            });
+        }
+        setDeleteDialogOpen(false);
+    };
+
+    const handleEdit = () => {
+        if (isEditing) {
+            // Save changes
+            dispatch(updateISP(isp.id, editedData, isp.dealerId));
+            setSnackbar({
+                open: true,
+                message: 'ISP updated successfully',
+                severity: 'success'
+            });
+        }
+        setIsEditing(!isEditing);
+    };
+
+    const handleInputChange = (field) => (event) => {
+        setEditedData({
+            ...editedData,
+            [field]: event.target.value
+        });
     };
 
     return (
@@ -119,24 +206,18 @@ function ISPDetails() {
                         <Button
                             variant="contained"
                             color="primary"
-                            onClick={() => navigate('/edit-isp', { state: { isp: location.state } })}
+                            onClick={handleEdit}
                             sx={{
                                 bgcolor: colors.primary,
                                 '&:hover': { bgcolor: colors.secondary }
                             }}
                         >
-                            Edit ISP
+                            {isEditing ? 'Save Changes' : 'Edit ISP'}
                         </Button>
                         <Button
                             variant="contained"
                             color="error"
-                            onClick={() => {
-                                if (window.confirm('Are you sure you want to delete this ISP?')) {
-                                    // Dispatch delete action
-                                    // dispatch(deleteISP(location.state.id));
-                                    navigate('/isp');
-                                }
-                            }}
+                            onClick={() => setDeleteDialogOpen(true)}
                         >
                             Delete ISP
                         </Button>
@@ -150,124 +231,240 @@ function ISPDetails() {
                         <Box sx={{
                             width: { xs: '100%', md: '50%' }
                         }}>
+
                             <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, bgcolor: 'background.default', width: '100%' }}>
                                 <List>
                                     <ListItem>
                                         <ListItemIcon>
                                             <Phone sx={{ color: 'darkblue' }} />
                                         </ListItemIcon>
-                                        <ListItemText
-                                            primary="Connection Details"
-                                            secondary="03030668886"
-                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                        />
+                                        {isEditing ? (
+                                            <TextField
+                                                fullWidth
+                                                label="Name"
+                                                value={editedData.name}
+                                                onChange={handleInputChange('name')}
+                                                variant="outlined"
+                                                size="small"
+                                            />
+                                        ) : (
+                                            <ListItemText
+                                                primary={"Name"}
+                                                secondary={isp.name}
+                                                secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                            />
+                                        )}
                                     </ListItem>
 
                                     <ListItem>
                                         <ListItemIcon>
                                             <Person sx={{ color: 'darkblue' }} />
                                         </ListItemIcon>
-                                        <ListItemText
-                                            primary="Address"
-                                            secondary="hghnb,1234"
-                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                        />
+                                        {isEditing ? (
+                                            <TextField
+                                                fullWidth
+                                                label="Package"
+                                                value={editedData.package}
+                                                onChange={handleInputChange('package')}
+                                                variant="outlined"
+                                                size="small"
+                                            />
+                                        ) : (
+                                            <ListItemText
+                                                primary="Package"
+                                                secondary={isp.package}
+                                                secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                            />
+                                        )}
                                     </ListItem>
-
+                                    <ListItem>
+                                        <ListItemIcon>
+                                            <AddIcCallOutlined sx={{ color: 'darkblue' }} />
+                                        </ListItemIcon>
+                                        {isEditing ? (
+                                            <TextField
+                                                fullWidth
+                                                label="Email"
+                                                value={editedData.email}
+                                                onChange={handleInputChange('email')}
+                                                variant="outlined"
+                                                size="small"
+                                            />
+                                        ) : (
+                                            <ListItemText
+                                                primary="Email"
+                                                secondary={isp.email}
+                                                secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                            />
+                                        )}
+                                    </ListItem>
+                                    <ListItem>
+                                        <ListItemIcon>
+                                            <Wallet sx={{ color: 'darkblue' }} />
+                                        </ListItemIcon>
+                                        {isEditing ? (
+                                            <TextField
+                                                fullWidth
+                                                label="Phone"
+                                                value={editedData.phone}
+                                                onChange={handleInputChange('phone')}
+                                                variant="outlined"
+                                                size="small"
+                                            />
+                                        ) : (
+                                            <ListItemText
+                                                primary="Phone"
+                                                secondary={isp.phone}
+                                                secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                            />
+                                        )}
+                                    </ListItem>
                                     <ListItem>
                                         <ListItemIcon>
                                             <CalendarToday sx={{ color: 'darkblue' }} />
                                         </ListItemIcon>
-                                        <ListItemText
-                                            primary="Last Recharge"
-                                            secondary="13-11-24"
-                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                        />
+                                        {isEditing ? (
+                                            <TextField
+                                                fullWidth
+                                                label="Address"
+                                                value={editedData.address}
+                                                onChange={handleInputChange('address')}
+                                                variant="outlined"
+                                                size="small"
+                                            />
+                                        ) : (
+                                            <ListItemText
+                                                primary="Address"
+                                                secondary={isp.address}
+                                                secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                            />
+                                        )}
                                     </ListItem>
-                                </List>
-                            </Paper>
-                        </Box>
-                        <Box sx={{
-                            width: { xs: '100%', md: '50%' }
-                        }}>
-                            <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, bgcolor: 'background.default', width: '100%' }}>
-                                <List>
                                     <ListItem>
                                         <ListItemIcon>
                                             <Badge sx={{ color: 'darkblue' }} />
                                         </ListItemIcon>
-                                        <ListItemText
-                                            primary="Total Package Price"
-                                            secondary="500"
-                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                        />
+                                        {isEditing ? (
+                                            <TextField
+                                                fullWidth
+                                                label="Country"
+                                                value={editedData.country}
+                                                onChange={handleInputChange('country')}
+                                                variant="outlined"
+                                                size="small"
+                                            />
+                                        ) : (
+                                            <ListItemText
+                                                primary="Country"
+                                                secondary={isp.city}
+                                                secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                            />
+                                        )}
                                     </ListItem>
-
                                     <ListItem>
                                         <ListItemIcon>
-                                            <Wallet sx={{ color: 'darkblue' }} />
+                                            <Badge sx={{ color: 'darkblue' }} />
                                         </ListItemIcon>
-                                        <ListItemText
-                                            primary="Abatement (Discount)"
-                                            secondary="None"
-                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                        />
+                                        {isEditing ? (
+                                            <TextField
+                                                fullWidth
+                                                label="City"
+                                                value={editedData.city}
+                                                onChange={handleInputChange('city')}
+                                                variant="outlined"
+                                                size="small"
+                                            />
+                                        ) : (
+                                            <ListItemText
+                                                primary="City"
+                                                secondary={isp.city}
+                                                secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                            />
+                                        )}
                                     </ListItem>
 
-                                    <ListItem>
-                                        <ListItemIcon>
-                                            <Wallet sx={{ color: 'darkblue' }} />
-                                        </ListItemIcon>
-                                        <ListItemText
-                                            primary="ReceiveAble Amount"
-                                            secondary="500/-"
-                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                        />
-                                    </ListItem>
                                 </List>
                             </Paper>
                         </Box>
                     </Box>
                 </Box>
-            )}
+            )
+            }
             {/* Invoice Item */}
-            {tabValue === 1 && (
-                <Grid container spacing={2} mt={2}>
-                    <Box textAlign="right" sx={{ display: 'flex', width: '100%', justifyContent: 'flex-end' }}>
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            startIcon={<AddIcon />}
-                            onClick={handleCreatePackage}
-                            sx={{
-                                background: colors.gradientBackground,
-                                '&:hover': { background: colors.gradientBackground },
-                            }}
-                        >
-                            Create Package
-                        </Button>
-                    </Box>
+            {
+                tabValue === 1 && (
                     <Grid container spacing={2} mt={2}>
-                        {pkgData.map((pkg, id) => (
-                            <Grid item xs={12} sm={6} md={4} key={id}>
-                                <Paper
-                                    elevation={3}
-                                    sx={{ display: 'flex', borderRadius: 5, flexDirection: 'column', alignItems: 'center', padding: 4, mb: 2, cursor: 'pointer' }}
-                                    onClick={() => handleStaffClick(pkg, id)} // Pass the entire staff member object
-                                >
-                                    <Typography variant="h5" color={colors.primary} sx={{ mb: 1 }}>
-                                        {pkg.name}
-                                    </Typography>
-                                    <Typography variant="secondary" color={colors.secondary} sx={{ mb: 1 }}>
-                                        {pkg.amount}
-                                    </Typography>
-
-                                </Paper>
+                        <Box textAlign="right" sx={{ display: 'flex', width: '100%', justifyContent: 'flex-end' }}>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                startIcon={<AddIcon />}
+                                onClick={handleCreatePackage}
+                                sx={{
+                                    background: colors.gradientBackground,
+                                    '&:hover': { background: colors.gradientBackground },
+                                }}
+                            >
+                                Create Package
+                            </Button>
+                        </Box>
+                        {loading ? (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                                <CircularProgress />
+                            </Box>
+                        ) : error ? (
+                            <Box sx={{ p: 2, textAlign: 'center', color: 'error.main' }}>
+                                {error}
+                            </Box>
+                        ) : packages.length === 0 ? (
+                            <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>
+                                No packages found. Create your first package!
+                            </Box>
+                        ) : (
+                            <Grid container spacing={2} mt={2}>
+                                {packages.map((pkg) => (
+                                    <Grid item xs={12} sm={6} md={4} key={pkg.id}>
+                                        <Paper
+                                            elevation={3}
+                                            sx={{
+                                                display: 'flex',
+                                                borderRadius: 5,
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                padding: 4,
+                                                mb: 2,
+                                                cursor: 'pointer',
+                                                '&:hover': {
+                                                    bgcolor: '#f5f5f5'
+                                                }
+                                            }}
+                                            onClick={() => handleStaffClick(pkg)}
+                                        >
+                                            <Box sx={{ width: '100%', textAlign: 'center' }}>
+                                                <Typography variant="h6" sx={{ color: colors.primary, mb: 1 }}>
+                                                    {pkg.pkgName}
+                                                </Typography>
+                                                <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                                                    ${pkg.salePrice}
+                                                </Typography>
+                                                {/* <Chip
+                                                    label={pkg.status || 'Active'}
+                                                    size="small"
+                                                    sx={{
+                                                        mt: 1,
+                                                        bgcolor: pkg.status === 'Active' ? 'success.light' : 'warning.light',
+                                                        color: pkg.status === 'Active' ? 'success.dark' : 'warning.dark'
+                                                    }}
+                                                /> */}
+                                            </Box>
+                                        </Paper>
+                                    </Grid>
+                                ))}
                             </Grid>
-                        ))}
+                        )}
                     </Grid>
-                </Grid>
-            )}
+                )
+            }
 
             {/* Pagination */}
             {
@@ -288,6 +485,37 @@ function ISPDetails() {
                     </Box>
                 )
             }
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+            >
+                <DialogTitle>Delete ISP</DialogTitle>
+                <DialogContent>
+                    <Typography>
+                        Are you sure you want to delete this ISP? This action cannot be undone.
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleDelete} color="error" variant="contained">
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            >
+                <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 }

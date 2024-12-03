@@ -250,7 +250,7 @@ function SidebarLayout() {
                             >
                                 {name.charAt(0).toUpperCase()}
                             </Avatar>
-                            <Typography variant="body2" sx={{ fontSize: { xs: 8, sm: 14 } }} color={colors.primary}>
+                            <Typography variant="body2" sx={{ fontSize: { xs: '0.6rem', sm: '0.9rem' },}} color={colors.primary}>
                                 {window.innerWidth < 700 ? (name.length > 10 ? `${name.slice(0, 8)}...` : name) : name}
                             </Typography>
                         </Button>
@@ -271,12 +271,7 @@ function SidebarLayout() {
                             <MenuItem onClick={handleLogout}>Logout</MenuItem>
                         </Menu>
                         {/* Icons */}
-                        <IconButton sx={{ ml: 0.3 }}>
-                            <SettingsIcon sx={{ fontSize: { xs: '1.1rem', sm: '1.6rem' }, color: colors.primary }} />
-                        </IconButton>
-                        <IconButton>
-                            <SearchIcon sx={{ fontSize: { xs: '1.1rem', sm: '1.6rem' }, color: colors.primary }} />
-                        </IconButton>
+                        
                         <IconButton>
                             <NotificationsIcon sx={{ fontSize: { xs: '1.1rem', sm: '1.6rem' }, color: colors.primary }} />
                         </IconButton>

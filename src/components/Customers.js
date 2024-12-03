@@ -273,7 +273,7 @@ function Customers() {
                                                 if (!event.target.closest('.action-buttons')) {
                                                     navigate(`/customer-details/${customer.id}`, { state: customer });
                                                 }
-                                            }}
+                                            }} 
                                             sx={{
                                                 cursor: 'pointer',
                                                 '&:hover': {

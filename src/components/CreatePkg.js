@@ -1,83 +1,154 @@
 import React, { useState } from 'react';
-import { Box, Grid, TextField, Button, Typography } from '@mui/material';
-import { useDispatch, useSelector } from 'react-redux';
+import {
+    Box,
+    Button,
+    TextField,
+    Grid,
+    Typography,
+    Snackbar,
+    Alert
+} from '@mui/material';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { addPackage } from '../store/actions/packageActions';
 import colors from '../colors';
-import { addStaff } from '../store/actions/staffActions'; // Import your action for adding staff
 
-
-export const TextFieldStyle = {
-    backgroundColor: 'white',
-    borderRadius: 2,
+const TextFieldStyle = {
     '& .MuiOutlinedInput-root': {
         '& fieldset': {
-            // borderColor: 'white',
+            borderColor: '#E0E3E7',
         },
         '&:hover fieldset': {
-            // borderColor: 'white',
+            borderColor: colors.primary,
         },
         '&.Mui-focused fieldset': {
-            borderColor: 'lightgray',
-            borderWidth: 1,
+            borderColor: colors.primary,
         },
     },
-}
-function CreatePkg() {
-    const [pkgName, setPkgName] = useState('');
-    const [salePrice, setSalePrice] = useState('');
-    const dealerId = useSelector((state) => state.auth.user.uid)
+    backgroundColor: 'white'
+};
+
+export default function CreatePkg() {
+    const navigate = useNavigate();
     const dispatch = useDispatch();
+    const location = useLocation();
+    const { ispId } = location.state || {};
+    const [loading, setLoading] = useState(false);
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-    const handleSubmit = () => {
-        const staffData = {
-            pkgName,
-            salePrice,
-        };
+    const [formData, setFormData] = useState({
+        pkgName: '',
+        salePrice: '',
+        status: 'Active'
+    });
 
-        // dispatch(addStaff(supportEmail, password, staffData, dealerId)); // Dispatch action to add staff
-        // localStorage.setItem('staffData', JSON.stringify(staffData)); // Optionally save to local storage
+    const handleChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
+        });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            await dispatch(addPackage(formData, ispId));
+            setSnackbar({
+                open: true,
+                message: 'Package created successfully',
+                severity: 'success'
+            });
+            setTimeout(() => {
+                navigate(-1);
+            }, 1500);
+        } catch (error) {
+            setSnackbar({
+                open: true,
+                message: 'Error creating package: ' + error.message,
+                severity: 'error'
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <Box mt={80} sx={{ backgroundColor: '#f4f6fd', padding: 4, borderRadius: 2, maxWidth: "auto", margin: 'auto' }}>
-            <Grid container spacing={2}>
-                <Grid item xs={6} sx={{ mt: 2 }}>
-                    <Typography sx={{ color: colors.primary }}>Package Name</Typography>
-                    <TextField
-                        sx={TextFieldStyle}
-                        placeholder="DT-1MB"
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        value={pkgName}
-                        onChange={(e) => setPkgName(e.target.value)}
-                    />
-                </Grid>
-                <Grid item xs={6} sx={{ mt: 2 }}>
-                    <Typography sx={{ color: colors.primary }}>Sales Number</Typography>
-                    <TextField
-                        sx={TextFieldStyle}
-                        placeholder="1200"
-                        type='number'
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        value={salePrice}
-                        onChange={(e) => setSalePrice(e.target.value)}
-                    />
-                </Grid>
-            </Grid>
-            <Box display="flex" alignItems="center" justifyContent={"center"} mt={5} mb={2}>
-                <Button
-                    variant="contained"
-                    //   color="primary"
-                    onClick={handleSubmit}
-                    style={{ marginLeft: '10px', backgroundColor: colors.primary }}
-                >
-                    Create Package
-                </Button>
+        <Box sx={{ backgroundColor: '#f4f6fd', padding: 4, minHeight: '100vh' }}>
+            <Box sx={{ maxWidth: 600, margin: 'auto', backgroundColor: 'white', padding: 4, borderRadius: 2 }}>
+                <Typography variant="h5" sx={{ mb: 4, color: colors.primary }}>
+                    Create New Package
+                </Typography>
+                <form onSubmit={handleSubmit}>
+                    <Grid container spacing={3}>
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                label="Package Name"
+                                name="pkgName"
+                                value={formData.pkgName}
+                                onChange={handleChange}
+                                required
+                                sx={TextFieldStyle}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                label="Sale Price"
+                                name="salePrice"
+                                type="number"
+                                value={formData.salePrice}
+                                onChange={handleChange}
+                                required
+                                sx={TextFieldStyle}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                                <Button
+                                    variant="outlined"
+                                    onClick={() => navigate(-1)}
+                                    sx={{
+                                        borderColor: colors.primary,
+                                        color: colors.primary,
+                                        '&:hover': {
+                                            borderColor: colors.secondary,
+                                            color: colors.secondary,
+                                        }
+                                    }}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    disabled={loading}
+                                    sx={{
+                                        bgcolor: colors.primary,
+                                        '&:hover': { bgcolor: colors.secondary }
+                                    }}
+                                >
+                                    Create Package
+                                </Button>
+                            </Box>
+                        </Grid>
+                    </Grid>
+                </form>
             </Box>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            >
+                <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 }
-
-export default CreatePkg; 

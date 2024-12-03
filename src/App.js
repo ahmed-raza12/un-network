@@ -26,6 +26,7 @@ import CreateISP from './components/CreateISP';
 import ISPDetails from './components/ISPDetails';
 import CreatePkg from './components/CreatePkg';
 import UserProfile from './components/UserProfile';
+import PkgDetails from './components/PkgDetails';
 
 // Initialize Firebase
 initializeApp(firebaseConfig);
@@ -100,6 +101,8 @@ const App = () => {
                 <Route path="/create-isp" element={<ProtectedRoute element={<CreateISP />} allowedRoles={['admin', 'dealer', 'staff']} />} />
                 <Route path="/isp-details/:id" element={<ProtectedRoute element={<ISPDetails />} allowedRoles={['admin', 'dealer', 'staff']} />} />
                 <Route path="/create-pkg" element={<CreatePkg />} />
+                <Route path="/pkg-details/:id" element={<PkgDetails />} />
+                
                 <Route path="/profile" element={<UserProfile />} />
                 
                 <Route path="/login" element={<Login />} />
