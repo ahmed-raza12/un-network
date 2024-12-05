@@ -7,23 +7,24 @@ export const ADD_CUSTOMER_SUCCESS = 'ADD_CUSTOMER_SUCCESS';
 export const ADD_CUSTOMER_FAILURE = 'ADD_CUSTOMER_FAILURE';
 export const FETCH_CUSTOMERS_SUCCESS = 'FETCH_CUSTOMERS_SUCCESS';
 export const FETCH_CUSTOMERS_FAILURE = 'FETCH_CUSTOMERS_FAILURE';
+export const FETCH_CUSTOMERS_REQUEST = 'FETCH_CUSTOMERS_REQUEST';
 export const UPDATE_CUSTOMER_SUCCESS = 'UPDATE_CUSTOMER_SUCCESS';
 export const UPDATE_CUSTOMER_FAILURE = 'UPDATE_CUSTOMER_FAILURE';
 export const DELETE_CUSTOMER_SUCCESS = 'DELETE_CUSTOMER_SUCCESS';
 export const DELETE_CUSTOMER_FAILURE = 'DELETE_CUSTOMER_FAILURE';
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 10;
 
 // Helper function to get paginated data
-const getPaginatedData = (allCustomers = [], page, searchQuery = '') => {
-    let filteredCustomers = allCustomers || [];
+export const getPaginatedData = (allCustomers = [], page, searchQuery = '') => {
+    let filteredCustomers = allCustomers;
     
     // Apply search if query exists
     if (searchQuery) {
         const searchLower = searchQuery.toLowerCase();
         filteredCustomers = filteredCustomers.filter(customer => 
-            (customer?.fullName && customer.fullName.toLowerCase().includes(searchLower)) ||
-            (customer?.userName && customer.userName.toLowerCase().includes(searchLower)) ||
+            (customer?.name && customer.name.toLowerCase().includes(searchLower)) ||
+            (customer?.email && customer.email.toLowerCase().includes(searchLower)) ||
             (customer?.phone && customer.phone.toLowerCase().includes(searchLower))
         );
     }
@@ -32,7 +33,8 @@ const getPaginatedData = (allCustomers = [], page, searchQuery = '') => {
     const totalCustomers = filteredCustomers.length;
     const totalPages = Math.ceil(totalCustomers / ITEMS_PER_PAGE) || 1;
     const startIndex = (page - 1) * ITEMS_PER_PAGE;
-    const paginatedCustomers = filteredCustomers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedCustomers = filteredCustomers.slice(startIndex, endIndex);
 
     return {
         customers: paginatedCustomers,
@@ -77,60 +79,38 @@ export const fetchCustomers = (page = 1, searchQuery = '') => async (dispatch, g
     }
 };
 
-export const fetchCustomersByDealerId = (dealerId, page = 1, searchQuery = '') => async (dispatch) => {
+export const fetchCustomersByDealerId = (dealerId, page = 1, searchQuery = '') => async dispatch => {
+    dispatch({ type: FETCH_CUSTOMERS_REQUEST });
     try {
-        dispatch({ type: 'SET_LOADING', payload: true });
-
-        if (!dealerId) {
-            dispatch({
-                type: FETCH_CUSTOMERS_SUCCESS,
-                payload: {
-                    customers: [],
-                    totalPages: 0,
-                    currentPage: 1,
-                    totalCustomers: 0
-                }
-            });
-            dispatch({ type: 'SET_LOADING', payload: false });
-            return;
-        }
-
-        console.log(`Fetching customers for dealer ID: ${dealerId}`);
         const customersRef = ref(db, `customers/${dealerId}`);
         const snapshot = await get(customersRef);
+        let customers = [];
         
-        let allCustomers = [];
         if (snapshot.exists()) {
-            allCustomers = Object.entries(snapshot.val()).map(([id, data]) => ({
-                id,
-                ...data
+            const data = snapshot.val();
+            customers = Object.keys(data).map(key => ({
+                ...data[key],
+                id: key
             }));
+            // Store all customers in localStorage
+            localStorage.setItem(`customers_${dealerId}`, JSON.stringify(customers));
         }
 
-        // Get paginated data
-        const paginatedData = getPaginatedData(allCustomers, page, searchQuery);
-
+        const paginatedData = getPaginatedData(customers, page, searchQuery);
+        
         dispatch({
             type: FETCH_CUSTOMERS_SUCCESS,
-            payload: {
-                customers: paginatedData.customers,
-                totalPages: paginatedData.totalPages,
-                currentPage: page,
-                totalCustomers: allCustomers.length
-            }
+            payload: paginatedData
         });
 
-        // Update localStorage after successful fetch
-        localStorage.setItem(`customers_${dealerId}`, JSON.stringify(allCustomers));
-        
+        return paginatedData;
     } catch (error) {
         console.error('Error fetching customers:', error);
         dispatch({
             type: FETCH_CUSTOMERS_FAILURE,
             payload: error.message
         });
-    } finally {
-        dispatch({ type: 'SET_LOADING', payload: false });
+        throw error;
     }
 };
 
@@ -165,58 +145,99 @@ export const addCustomer = (customerData, dealerId) => async (dispatch, getState
     }
 };
 
-export const deleteCustomer = (customerId) => async (dispatch, getState) => {
+export const updateCustomer = (customerId, customerData, dealerId) => async (dispatch, getState) => {
+    console.log('customerId:', customerId, 'dealerId:', dealerId, 'customerData:', customerData);
     try {
-        const dealerId = getState().auth.user.role === 'staff' ? getState().auth.user.dealerId : getState().auth.user.uid;
+        // Ensure we're not overwriting critical fields
+        const updatedData = {
+            ...customerData,
+            id: customerId,
+            dealerId,
+            uid: customerData.uid || customerId
+        };
+
+        // Update customer data in Firebase
+        const customerRef = ref(db, `customers/${dealerId}/${customerId}`);
+        await set(customerRef, updatedData);
+
+        // Get all customers from Firebase to ensure data consistency
+        const customersRef = ref(db, `customers/${dealerId}`);
+        const snapshot = await get(customersRef);
+        let allCustomers = [];
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            allCustomers = Object.keys(data).map(key => ({
+                ...data[key],
+                id: key
+            }));
+            // Update localStorage with fresh data
+            localStorage.setItem(`customers_${dealerId}`, JSON.stringify(allCustomers));
+        }
+
+        // Get paginated data for current view
+        const currentPage = getState().customers.currentPage || 1;
+        const searchQuery = ''; // You might want to get this from state if you're tracking it
+        const paginatedData = getPaginatedData(allCustomers, currentPage, searchQuery);
+
+        // Update Redux state
+        dispatch({ 
+            type: UPDATE_CUSTOMER_SUCCESS,
+            payload: paginatedData
+        });
         
-        // Delete from database
+        return true;
+    } catch (error) {
+        console.error('Error updating customer:', error);
+        dispatch({ type: UPDATE_CUSTOMER_FAILURE, payload: error.message });
+        throw error;
+    }
+};
+
+export const deleteCustomer = (customerId, dealerId) => async (dispatch, getState) => {
+    try {
+        
+        // Delete from Firebase
         const customerRef = ref(db, `customers/${dealerId}/${customerId}`);
         await set(customerRef, null);
 
-        // Update localStorage
-        const allCustomers = JSON.parse(localStorage.getItem(`customers_${dealerId}`)) || [];
-        const updatedCustomers = allCustomers.filter(customer => customer.id !== customerId);
-        localStorage.setItem(`customers_${dealerId}`, JSON.stringify(updatedCustomers));
+        // Get all customers from Firebase to ensure data consistency
+        const customersRef = ref(db, `customers/${dealerId}`);
+        const snapshot = await get(customersRef);
+        let allCustomers = [];
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            allCustomers = Object.keys(data).map(key => ({
+                ...data[key],
+                id: key
+            }));
+            // Update localStorage with fresh data
+            localStorage.setItem(`customers_${dealerId}`, JSON.stringify(allCustomers));
+        }
 
+        // Get paginated data for current view
+        const currentPage = getState().customers.currentPage || 1;
+        const searchQuery = ''; // You might want to get this from state if you're tracking it
+        const paginatedData = getPaginatedData(allCustomers, currentPage, searchQuery);
+
+        // First dispatch delete success
         dispatch({
             type: DELETE_CUSTOMER_SUCCESS,
-            payload: customerId,
+            payload: customerId
         });
 
-        // Refresh the customer list
-        dispatch(fetchCustomers(1));
+        // Then update the list with new paginated data
+        dispatch({
+            type: FETCH_CUSTOMERS_SUCCESS,
+            payload: paginatedData
+        });
+        
+        return true;
     } catch (error) {
         console.error("Error deleting customer: ", error);
         dispatch({
             type: DELETE_CUSTOMER_FAILURE,
-            payload: error.message,
+            payload: error.message
         });
-    }
-};
-
-export const updateCustomer = (customerId, customerData) => async (dispatch, getState) => {
-    try {
-        const dealerId = getState().auth.user.role === 'staff' 
-            ? getState().auth.user.dealerId 
-            : getState().auth.user.uid;
-
-        // Update customer data
-        const customerRef = ref(db, `customers/${dealerId}/${customerId}`);
-        await set(customerRef, { ...customerData, id: customerId });
-
-        // Update local storage
-        const customers = JSON.parse(localStorage.getItem(`customers_${dealerId}`)) || [];
-        const updatedCustomers = customers.map(customer => 
-            customer.id === customerId ? { ...customerData, id: customerId } : customer
-        );
-        localStorage.setItem(`customers_${dealerId}`, JSON.stringify(updatedCustomers));
-
-        dispatch({ 
-            type: UPDATE_CUSTOMER_SUCCESS, 
-            payload: { ...customerData, id: customerId } 
-        });
-    } catch (error) {
-        console.error('Error updating customer: ', error);
-        dispatch({ type: UPDATE_CUSTOMER_FAILURE, payload: error.message });
+        throw error;
     }
 };

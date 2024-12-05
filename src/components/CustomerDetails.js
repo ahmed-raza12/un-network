@@ -20,7 +20,14 @@ import {
     TableRow,
     IconButton,
     styled,
-    Pagination
+    Pagination,
+    Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    DialogContentText,
+    TextField
 } from '@mui/material';
 
 import {
@@ -30,38 +37,56 @@ import {
     Wallet,
     CalendarToday,
     Print as PrintIcon,
-    Visibility as VisibilityIcon
+    Visibility as VisibilityIcon,
+    Edit,
+    Delete,
+    Save,
+    Cancel
 } from '@mui/icons-material';
 import PaymentIcon from '@mui/icons-material/Payment';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import colors from '../colors';
 import { fetchInvoicesByCustomerUid } from '../store/actions/invoiceActions';
+import { updateCustomer, deleteCustomer } from '../store/actions/customerActions';
 import { useDispatch, useSelector } from 'react-redux';
 import { useReactToPrint } from 'react-to-print';
 import { PrintableInvoice } from './Invoice';
+import dealerReducer from '../store/reducers/dealerReducer';
 
 // Create a styled Tab component
 const StyledTab = styled(Tab)(({ theme }) => ({
     '&.Mui-selected': {
         background: 'linear-gradient(90deg, #00A36C 0%, #2AAA8A 100%)',
-        color: 'white', // Active tab label color
+        color: 'white',
     },
 }));
 
 function CustomerDetails() {
     const [tabValue, setTabValue] = useState(0);
     const [selectedInvoice, setSelectedInvoice] = useState(null);
-    const navigate = useNavigate()
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedCustomer, setEditedCustomer] = useState(null);
+    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+    const navigate = useNavigate();
     const { id } = useParams();
     const dispatch = useDispatch();
-    const { invoices, loading, customer } = useSelector((state) => state.invoices);
+    const { invoices, loading } = useSelector((state) => state.invoices);
+    const location = useLocation();
+    const { state } = location;
+    const customer = state;
+    console.log(customer, 'customer');
     const printRef = useRef();
 
     useEffect(() => {
+        if (customer) {
+            setEditedCustomer({ ...customer });
+        }
+    }, [customer]);
+
+    useEffect(() => {
         if (customer?.uid) {
-            console.log('Fetching invoices for customer:', customer.uid);
             dispatch(fetchInvoicesByCustomerUid(customer.uid));
         }
     }, [dispatch, customer?.uid]);
@@ -76,6 +101,49 @@ function CustomerDetails() {
         removeAfterPrint: true,
     });
 
+    const handleEditClick = () => {
+        setIsEditing(true);
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditing(false);
+        setEditedCustomer({ ...customer });
+    };
+
+    const handleSaveEdit = async () => {
+        try {
+            await dispatch(updateCustomer(customer.id, editedCustomer, customer.dealerId));
+            setIsEditing(false);
+            navigate('/customers', { replace: true });
+        } catch (error) {
+            console.error('Error updating customer:', error);
+            // TODO: Show error message to user
+        }
+    };
+
+    const handleDeleteClick = () => {
+        setOpenDeleteDialog(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        try {
+            await dispatch(deleteCustomer(customer.id, customer.dealerId));
+            setOpenDeleteDialog(false);
+            navigate('/customers', { replace: true });
+        } catch (error) {
+            console.error('Error deleting customer:', error);
+            // TODO: Show error message to user
+        }
+    };
+
+    const handleDeleteCancel = () => {
+        setOpenDeleteDialog(false);
+    };
+
+    const handleInputChange = (field) => (event) => {
+        setEditedCustomer({ ...editedCustomer, [field]: event.target.value });
+    };
+
     const handleViewInvoice = (invoice) => {
         setSelectedInvoice(invoice);
         navigate(`/invoice/${invoice.id}`);
@@ -86,17 +154,14 @@ function CustomerDetails() {
     };
 
     const handleTabChange = (event, newValue) => {
-        console.log(newValue);
-
         setTabValue(newValue);
     };
 
     return (
         <Box sx={{
             backgroundColor: '#f4f6fd',
-            padding: { xs: 1, sm: 2, md: 4 } // Responsive padding
+            padding: { xs: 1, sm: 2, md: 4 }
         }}>
-            {/* Tabs for Profile and Invoices */}
             <Tabs
                 value={tabValue}
                 onChange={handleTabChange}
@@ -120,37 +185,141 @@ function CustomerDetails() {
             {tabValue === 0 && (
                 <Box sx={{
                     display: 'flex',
-                    flexDirection: { xs: 'column', md: 'row' },
+                    flexDirection: { xs: 'column', md: 'column' },
                     gap: 2,
                     p: { xs: 1, sm: 2, md: 4 }
                 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', mb: 2 }}>
+                        {!isEditing ? (
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                                <Button
+                                    variant="contained"
+                                    startIcon={<Edit />}
+                                    onClick={handleEditClick}
+                                    sx={{ mr: 1 }}
+                                >
+                                    Edit
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    color="error"
+                                    startIcon={<Delete />}
+                                    onClick={handleDeleteClick}
+                                >
+                                    Delete
+                                </Button>
+                            </Box>
+                        ) : (
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                                <Button
+                                    variant="contained"
+                                    startIcon={<Save />}
+                                    onClick={handleSaveEdit}
+                                    sx={{ mr: 1 }}
+                                >
+                                    Save
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<Cancel />}
+                                    onClick={handleCancelEdit}
+                                >
+                                    Cancel
+                                </Button>
+                            </Box>
+                        )}
+                    </Box>
                     <Box sx={{
-                        width: { xs: '100%', md: '50%' }
+                        display: 'flex',
+                        flexDirection: { xs: 'column', md: 'row' },
+                        gap: 2,
+                        width: '100%'
                     }}>
                         <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, bgcolor: 'background.default', width: '100%' }}>
                             <List>
                                 <ListItem>
                                     <ListItemIcon>
-                                        <Phone sx={{ color: 'darkblue' }} />
+                                        <Person sx={{ color: 'darkblue' }} />
                                     </ListItemIcon>
-                                    <ListItemText
-                                        primary="Connection Details"
-                                        secondary="03030668886"
-                                        secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                    />
+                                    {isEditing ? (
+                                        <TextField
+                                            fullWidth
+                                            label="Full Name"
+                                            value={editedCustomer?.fullName || ''}
+                                            onChange={handleInputChange('fullName')}
+                                        />
+                                    ) : (
+                                        <ListItemText
+                                            primary="Full Name"
+                                            secondary={customer?.fullName}
+                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                        />
+                                    )}
                                 </ListItem>
 
                                 <ListItem>
                                     <ListItemIcon>
-                                        <Person sx={{ color: 'darkblue' }} />
+                                        <Phone sx={{ color: 'darkblue' }} />
                                     </ListItemIcon>
-                                    <ListItemText
-                                        primary="Address"
-                                        secondary="hghnb,1234"
-                                        secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                    />
+                                    {isEditing ? (
+                                        <TextField
+                                            fullWidth
+                                            label="Phone"
+                                            value={editedCustomer?.phone || ''}
+                                            onChange={handleInputChange('phone')}
+                                        />
+                                    ) : (
+                                        <ListItemText
+                                            primary="Phone"
+                                            secondary={customer?.phone}
+                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                        />
+                                    )}
                                 </ListItem>
 
+                                <ListItem>
+                                    <ListItemIcon>
+                                        <Badge sx={{ color: 'darkblue' }} />
+                                    </ListItemIcon>
+                                    {isEditing ? (
+                                        <TextField
+                                            fullWidth
+                                            label="Address"
+                                            value={editedCustomer?.address || ''}
+                                            onChange={handleInputChange('address')}
+                                        />
+                                    ) : (
+                                        <ListItemText
+                                            primary="Address"
+                                            secondary={customer?.address}
+                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                        />
+                                    )}
+                                </ListItem>
+
+                                <ListItem>
+                                    <ListItemIcon>
+                                        <Wallet sx={{ color: 'darkblue' }} />
+                                    </ListItemIcon>
+                                    {isEditing ? (
+                                        <TextField
+                                            fullWidth
+                                            label="Package"
+                                            value={editedCustomer?.packageType || ''}
+                                            onChange={handleInputChange('package')}
+                                        />
+                                    ) : (
+                                        <ListItemText
+                                            primary="Package"
+                                            secondary={customer?.packageType}
+                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                        />
+                                    )}
+                                </ListItem>
+                            </List>
+                        </Paper>
+                        <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, bgcolor: 'background.default', width: '100%' }}>
+                            <List>
                                 <ListItem>
                                     <ListItemIcon>
                                         <CalendarToday sx={{ color: 'darkblue' }} />
@@ -161,14 +330,7 @@ function CustomerDetails() {
                                         secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
                                     />
                                 </ListItem>
-                            </List>
-                        </Paper>
-                    </Box>
-                    <Box sx={{
-                        width: { xs: '100%', md: '50%' }
-                    }}>
-                        <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, bgcolor: 'background.default', width: '100%' }}>
-                            <List>
+
                                 <ListItem>
                                     <ListItemIcon>
                                         <Badge sx={{ color: 'darkblue' }} />
@@ -227,15 +389,15 @@ function CustomerDetails() {
                                         <TableCell>{invoice.ispName}</TableCell>
                                         <TableCell align="right">Rs. {invoice.amount}</TableCell>
                                         <TableCell align="right">
-                                            <IconButton 
-                                                size="small" 
+                                            <IconButton
+                                                size="small"
                                                 onClick={() => handleViewInvoice(invoice)}
                                                 sx={{ color: colors.primary }}
                                             >
                                                 <VisibilityIcon />
                                             </IconButton>
-                                            <IconButton 
-                                                size="small" 
+                                            <IconButton
+                                                size="small"
                                                 onClick={() => handlePrintInvoice(invoice)}
                                                 sx={{ color: colors.primary }}
                                             >
@@ -274,6 +436,24 @@ function CustomerDetails() {
                     }}
                 />
             </Box>
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={openDeleteDialog}
+                onClose={handleDeleteCancel}
+            >
+                <DialogTitle>Confirm Delete</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Are you sure you want to delete this customer? This action cannot be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDeleteCancel}>Cancel</Button>
+                    <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }

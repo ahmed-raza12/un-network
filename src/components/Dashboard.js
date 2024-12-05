@@ -32,9 +32,14 @@ function Dashboard() {
         // auth.signOut();
     };
     return (
-        <Box component="main" sx={{ flexGrow: 1, p: 2 }}>
+        <Box component="main" sx={{ flexGrow: 1, p: 2, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
             <Grid container spacing={2} mt={2}>
                 {[
+                    
+                    { label: 'Connections', icon: <PeopleIcon fontSize="medium" />, route: '/customers' },
+                    { label: 'Dealers', icon: <BusinessIcon fontSize="large" />, route: '/dealers' },
+                    { label: 'Staff', icon: <Groups2 fontSize="large" />, route: '/staff' },
+                    { label: 'Reports', icon: <ReportIcon fontSize="large" />, route: '/reports' },
                     { label: 'Connections', icon: <PeopleIcon fontSize="medium" />, route: '/customers' },
                     { label: 'Dealers', icon: <BusinessIcon fontSize="large" />, route: '/dealers' },
                     { label: 'Staff', icon: <Groups2 fontSize="large" />, route: '/staff' },

@@ -24,21 +24,32 @@ export const addStaff = (email, password, staffData, dealerId) => async (dispatc
         // Add dealer role to the Realtime Database
         const userRef = ref(db, `users/${user.uid}`);
         await set(userRef, { role: 'staff', dealerId, userData: staffData });
-        // Access the uid from the Redux state
-        const userId = getState().auth.user.uid;
         
         // Add staff data under the logged-in user's node
         const staffRef = ref(db, `staff/${dealerId}`);
         const newStaffRef = push(staffRef);
-        await set(newStaffRef, { uid: user.uid, ...staffData });
+        const newStaffId = newStaffRef.key;
+        const newStaffData = { id: newStaffId, uid: user.uid, ...staffData };
+        await set(newStaffRef, newStaffData);
 
-        dispatch({ type: ADD_STAFF_SUCCESS, payload: staffData });
+        // Clear cache to force a fresh fetch
+        localStorage.removeItem(`staff_${dealerId}`);
+
+        // Fetch updated staff list
+        if (dealerId) {
+            dispatch(fetchStaffByDealerId(dealerId));
+        } else {
+            dispatch(fetchStaff());
+        }
+
+        dispatch({ type: ADD_STAFF_SUCCESS, payload: newStaffData });
+        dispatch({ type: SET_MESSAGE, payload: 'Staff added successfully' });
     } catch (error) {
         console.error("Error adding staff: ", error);
         dispatch({ type: ADD_STAFF_FAILURE, payload: error.message });
+        dispatch({ type: SET_ERROR, payload: 'Failed to add staff' });
     }
 };
-
 
 // Action to fetch staff
 export const fetchStaff = () => async (dispatch, getState) => {
@@ -124,6 +135,16 @@ export const updateStaff = (staffData) => async (dispatch, getState) => {
             userData: staffData
         });
 
+        // Clear cache to force a fresh fetch
+        localStorage.removeItem(`staff_${dealerId}`);
+
+        // Fetch updated staff list
+        if (dealerId) {
+            dispatch(fetchStaffByDealerId(dealerId));
+        } else {
+            dispatch(fetchStaff());
+        }
+
         dispatch({
             type: UPDATE_STAFF_SUCCESS,
             payload: staffData
@@ -150,21 +171,41 @@ export const updateStaff = (staffData) => async (dispatch, getState) => {
 };
 
 // Action to delete staff
-export const deleteStaff = (staffId, staffUid) => async (dispatch, getState) => {
+export const deleteStaff = (staffId, staffUid, dealerId) => async (dispatch, getState) => {
     try {
-        const dealerId = getState().auth.user.uid;
+        // If dealerId is not provided, get it from state
+        const actualDealerId = dealerId || getState().auth.user.uid;
         
         // Delete staff data
-        const staffRef = ref(db, `staff/${dealerId}/${staffId}`);
+        const staffRef = ref(db, `staff/${actualDealerId}/${staffId}`);
         await set(staffRef, null);
 
         // Delete user role data
         const userRef = ref(db, `users/${staffUid}`);
         await set(userRef, null);
 
+        // Clear cache to force a fresh fetch
+        localStorage.removeItem(`staff_${actualDealerId}`);
+
+        // Dispatch delete success before fetching updated list
         dispatch({ type: DELETE_STAFF_SUCCESS, payload: staffId });
+        dispatch({ type: SET_MESSAGE, payload: 'Staff deleted successfully' });
+
+        // Return a promise that resolves when the staff list is updated
+        return new Promise((resolve) => {
+            // Fetch updated staff list
+            const fetchPromise = actualDealerId ? 
+                dispatch(fetchStaffByDealerId(actualDealerId)) : 
+                dispatch(fetchStaff());
+            
+            fetchPromise.then(() => {
+                resolve();
+            });
+        });
     } catch (error) {
         console.error("Error deleting staff: ", error);
         dispatch({ type: DELETE_STAFF_FAILURE, payload: error.message });
+        dispatch({ type: SET_ERROR, payload: 'Failed to delete staff' });
+        throw error; // Re-throw to handle in component
     }
 };

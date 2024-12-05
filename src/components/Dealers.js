@@ -103,7 +103,7 @@ function Dealers() {
     };
 
     return (
-        <Box sx={{ pl: 4, pt: 5, }}>
+        <Box sx={{ pl: 4, pt: 5, minWidth: '100vh' }}>
             <Box display="flex" alignItems="center" mb={2}>
                 <TextField
                     placeholder="Name / Username / Phone Number"
@@ -144,12 +144,12 @@ function Dealers() {
             <TableContainer component={Paper}>
                 <Table>
                     <TableHead>
-                        <TableRow>
-                            <TableCell>Name</TableCell>
-                            <TableCell>Email</TableCell>
-                            <TableCell>Phone</TableCell>
-                            <TableCell>Address</TableCell>
-                            <TableCell>Actions</TableCell>
+                        <TableRow sx={{ backgroundColor: colors.primary }}>
+                            <TableCell TableCell sx={{ color: 'white' }}>Name</TableCell>
+                            <TableCell TableCell sx={{ color: 'white' }}>Email</TableCell>
+                            <TableCell TableCell sx={{ color: 'white' }}>Phone</TableCell>
+                            <TableCell TableCell sx={{ color: 'white' }}>Address</TableCell>
+                            <TableCell TableCell sx={{ color: 'white' }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>

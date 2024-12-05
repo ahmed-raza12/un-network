@@ -10,23 +10,12 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    TextField,
-    IconButton,
-    Tooltip,
-    DialogContentText,
     CircularProgress
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import colors from '../colors';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchStaff, fetchStaffByDealerId, updateStaff, deleteStaff } from '../store/actions/staffActions';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import CloseIcon from '@mui/icons-material/Close';
 
 const StaffList = () => {
     const navigate = useNavigate();
@@ -134,7 +123,7 @@ const StaffList = () => {
     };
 
     return (
-        <Box sx={{ width: '100%', p: 3 }}>
+        <Box sx={{ width: '100%', p: 3, minHeight: '100vh' }}>
             <Paper sx={{ width: '100%', mb: 2, p: 2 }}>
                 {role === 'admin' && (
                     <FormControl sx={{ minWidth: 200, mb: 2 }}>
@@ -159,14 +148,13 @@ const StaffList = () => {
                         <CircularProgress />
                     </Box>
                 ) : (
-                    <Grid container spacing={2} mt={2}>
+                    <Grid container spacing={3} mt={2}>
                         <Grid item xs={12}>
                             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                                 <Button
                                     type="submit"
                                     variant="contained"
                                     onClick={() => navigate('/create-staff')}
-
                                     sx={{
                                         background: colors.gradientBackground,
                                         '&:hover': { background: colors.gradientBackground }

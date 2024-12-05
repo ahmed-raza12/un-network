@@ -96,20 +96,20 @@ const ISP = () => {
     }
 
     return (
-        <Box sx={{ pl: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: "flex-end", gap: 2, mt: 1 }}>
+        <Box sx={{ pl: 2, minHeight: '100vh' }}>
+            <Paper sx={{ width: '100%', mb: 2, p: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: "flex-end", gap: 2, mt: 1, }}>
                 <Button
                     variant="contained"
                     onClick={handleCreateISP}
                     sx={{
-                        '&:hover': { bgcolor: colors.secondary },
-                        borderRadius: 6,
-                        backgroundColor: colors.primary
+                        background: colors.gradientBackground,
+                        '&:hover': { background: colors.gradientBackground }
                     }}
                 >
                     Create ISP
                 </Button>
-            </Box>
+            </Box> 
             {role === 'admin' && (
                     <FormControl sx={{ minWidth: 200, mb: 2 }}>
                         <InputLabel>Select Dealer</InputLabel>
@@ -178,6 +178,7 @@ const ISP = () => {
                     </Grid>
                 )}
             </Grid>
+            </Paper>
         </Box>
     );
 };

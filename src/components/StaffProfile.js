@@ -14,7 +14,12 @@ import {
     Tab,
     Paper,
     Link,
-    TextField
+    TextField,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    DialogContentText
 } from '@mui/material';
 import {
     Phone,
@@ -22,21 +27,24 @@ import {
     Badge,
     Edit,
     Save,
-    Cancel
+    Cancel,
+    Delete
 } from '@mui/icons-material';
 import colors from '../colors';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { updateStaff } from '../store/actions/staffActions';
+import { updateStaff, deleteStaff } from '../store/actions/staffActions';
 
 const StaffProfile = () => {
     const [value, setValue] = useState(0);
     const [isEditing, setIsEditing] = useState(false);
     const [editedStaff, setEditedStaff] = useState(null);
+    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
     const dispatch = useDispatch();
     const staffMember = location.state;
+
     const handleTabChange = (event, newValue) => {
         setValue(newValue);
     };
@@ -51,14 +59,35 @@ const StaffProfile = () => {
         setEditedStaff(null);
     };
 
-    const handleSaveEdit = () => {
-
-        dispatch(updateStaff(editedStaff));
+    const handleSaveEdit = async () => {
+        await dispatch(updateStaff(editedStaff));
         setIsEditing(false);
+        navigate(-1); // Navigate back after saving
     };
 
     const handleInputChange = (field) => (event) => {
         setEditedStaff({ ...editedStaff, [field]: event.target.value });
+    };
+
+    const handleDeleteClick = () => {
+        setOpenDeleteDialog(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        try {
+            // Wait for deletion and list update to complete
+            await dispatch(deleteStaff(staffMember.id, staffMember.uid, staffMember.dealerId));
+            setOpenDeleteDialog(false);
+            // Only navigate back after successful deletion
+            navigate(-1);
+        } catch (error) {
+            console.error('Error deleting staff:', error);
+            setOpenDeleteDialog(false);
+        }
+    };
+
+    const handleDeleteCancel = () => {
+        setOpenDeleteDialog(false);
     };
 
     return (
@@ -81,18 +110,31 @@ const StaffProfile = () => {
                         {staffMember.designation}
                     </Typography>
                     {!isEditing ? (
-                        <Button
-                            variant="contained"
-                            startIcon={<Edit />}
-                            onClick={handleEditClick}
-                            sx={{
-                                bgcolor: colors.primary,
-                                '&:hover': { bgcolor: colors.secondary },
-                                borderRadius: '25px'
-                            }}
-                        >
-                            Edit Profile
-                        </Button>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Button
+                                variant="contained"
+                                startIcon={<Edit />}
+                                onClick={handleEditClick}
+                                sx={{
+                                    bgcolor: colors.primary,
+                                    '&:hover': { bgcolor: colors.secondary },
+                                    borderRadius: '25px'
+                                }}
+                            >
+                                Edit
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                color="error"
+                                startIcon={<Delete />}
+                                onClick={handleDeleteClick}
+                                sx={{
+                                    borderRadius: '25px'
+                                }}
+                            >
+                                Delete
+                            </Button>
+                        </Box>
                     ) : (
                         <Box sx={{ display: 'flex', gap: 1 }}>
                             <Button
@@ -271,6 +313,29 @@ const StaffProfile = () => {
                     </Paper>
                 </Box>
             </Box>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={openDeleteDialog}
+                onClose={handleDeleteCancel}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">
+                    {"Confirm Delete Staff Member"}
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        Are you sure you want to delete this staff member? This action cannot be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDeleteCancel}>Cancel</Button>
+                    <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Container>
     );
 };

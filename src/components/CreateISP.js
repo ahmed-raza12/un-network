@@ -8,26 +8,39 @@ import {
     Grid,
     CircularProgress
 } from '@mui/material';
+import { green } from '@mui/material/colors';
 import { useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { addISP } from '../store/actions/ispActions';
 import colors from '../colors';
 
+
 export const TextFieldStyle = {
-    backgroundColor: 'white',
-    borderRadius: 2,
+    label: {
+        color: colors.primary
+    },
+    floatingLabel: {
+        color: colors.primary
+    },
+    '& .MuiSelect-select:focus': {
+        backgroundColor: 'transparent',
+    },
+    '& .MuiFormLabel-root.Mui-focused': {
+        color: colors.primary,
+    },
+
     '& .MuiOutlinedInput-root': {
         '& fieldset': {
-            // borderColor: 'white',
+            borderColor: '#E0E3E7',
         },
         '&:hover fieldset': {
-            // borderColor: 'white',
+            borderColor: colors.primary,
         },
         '&.Mui-focused fieldset': {
-            borderColor: 'lightgray',
-            borderWidth: 1,
+            borderColor: colors.primary,
         },
     },
+    backgroundColor: 'white'
 };
 
 const CreateISP = () => {
@@ -107,6 +120,9 @@ const CreateISP = () => {
                                 required
                                 sx={TextFieldStyle}
                                 size="small"
+                                InputLabelProps={{
+                                    style: { color: colors.primary },
+                                  }}
                             />
                         </Grid>
                         <Grid item xs={12} sm={6}>
@@ -119,6 +135,9 @@ const CreateISP = () => {
                                 required
                                 sx={TextFieldStyle}
                                 size="small"
+                                InputLabelProps={{
+                                    style: { color: colors.primary },
+                                  }}
                             />
                         </Grid>
                         <Grid item xs={12} sm={6}>
@@ -131,6 +150,9 @@ const CreateISP = () => {
                                 required
                                 sx={TextFieldStyle}
                                 size="small"
+                                InputLabelProps={{
+                                    style: { color: colors.primary },
+                                  }}
                             />
                         </Grid>
                         <Grid item xs={12} sm={6}>
@@ -143,6 +165,9 @@ const CreateISP = () => {
                                 required
                                 sx={TextFieldStyle}
                                 size="small"
+                                InputLabelProps={{
+                                    style: { color: colors.primary },
+                                  }}
                             />
                         </Grid>
                         <Grid item xs={12} sm={6}>
@@ -155,6 +180,9 @@ const CreateISP = () => {
                                 required
                                 sx={TextFieldStyle}
                                 size="small"
+                                InputLabelProps={{
+                                    style: { color: colors.primary },
+                                  }}
                             />
                         </Grid>
                         <Grid item xs={12} sm={6}>
@@ -167,6 +195,9 @@ const CreateISP = () => {
                                 required
                                 sx={TextFieldStyle}
                                 size="small"
+                                InputLabelProps={{
+                                    style: { color: colors.primary },
+                                  }}
                             />
                         </Grid>
                         <Grid item xs={12} sm={6}>
@@ -179,6 +210,9 @@ const CreateISP = () => {
                                 required
                                 sx={TextFieldStyle}
                                 size="small"
+                                InputLabelProps={{
+                                    style: { color: colors.primary },
+                                  }}
                             />
                         </Grid>
                         <Grid item xs={12}>

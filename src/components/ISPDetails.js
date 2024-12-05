@@ -166,6 +166,8 @@ function ISPDetails() {
     return (
         <Box sx={{
             backgroundColor: '#f4f6fd',
+            minHeight: '100vh',
+            // display: 'flex',
             padding: { xs: 1, sm: 2, md: 4 } // Responsive padding
         }}>
             {/* Tabs for Profile and Invoices */}
@@ -470,7 +472,7 @@ function ISPDetails() {
             {
                 tabValue === 2 && (
                     <Box display="flex" justifyContent="center" mt={2}>
-                        <Pagination
+                        {/* <Pagination
                             count={1}
                             variant="outlined"
                             shape="rounded"
@@ -481,7 +483,7 @@ function ISPDetails() {
                                     height: { xs: 30, sm: 40 },
                                 }
                             }}
-                        />
+                        /> */}
                     </Box>
                 )
             }
