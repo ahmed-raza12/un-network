@@ -1,4 +1,4 @@
-import { ref, set, push, get, child, query, orderByChild, equalTo } from 'firebase/database';
+import { ref, set, push, get, child, query, orderByChild, equalTo, update } from 'firebase/database';
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { db } from '../../firebase';
 
@@ -15,6 +15,7 @@ export const DELETE_DEALER_FAILURE = 'DELETE_DEALER_FAILURE';
 // Action to register a dealer
 export const registerDealer = (email, password, dealerData, dealerId) => async (dispatch) => {
     const auth = getAuth();
+    const {address, name, phone, area, cnic, companyCode} = dealerData
     try {
         // Create user in Firebase Authentication
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -22,14 +23,14 @@ export const registerDealer = (email, password, dealerData, dealerId) => async (
         
         // Add dealer role to the Realtime Database
         const userRef = ref(db, `users/${user.uid}`);
-        await set(userRef, { role: 'dealer', dealerId, userData: dealerData });
+        await set(userRef, { role: 'dealer', dealerId, email, address, name, phone, area, cnic, companyCode });
 
         // Add dealer data to Realtime Database
         const dealerRef = ref(db, 'dealers');
         const newDealerRef = push(dealerRef);
-        await set(newDealerRef, { uid: user.uid, ...dealerData });
+        await set(newDealerRef, { uid: user.uid, role: 'dealer', dealerId, email, address, name, phone, area, cnic, companyCode });
 
-        dispatch({ type: ADD_DEALER_SUCCESS, payload: { uid: user.uid, ...dealerData } }); // Dispatch success action
+        dispatch({ type: ADD_DEALER_SUCCESS, payload: { uid: user.uid, role: 'dealer', dealerId, email, address, name, phone, area, cnic, companyCode } }); // Dispatch success action
     } catch (error) {
         console.error("Error adding dealer: ", error);
         dispatch({ type: ADD_DEALER_FAILURE, payload: error.message }); // Dispatch failure action
@@ -64,6 +65,11 @@ export const fetchDealers = () => async (dispatch) => {
 export const updateDealer = (dealerId, dealerData) => async (dispatch) => {
     try {
         // Get all dealers and find the one we want to update
+        // Update user in users node
+        console.log(dealerData, 'dealerData');      
+        const userRef = ref(db, `users/${dealerData.uid}`);
+        await update(userRef, { ...dealerData });
+        
         const dealersRef = ref(db, 'dealers');
         const snapshot = await get(dealersRef);
         

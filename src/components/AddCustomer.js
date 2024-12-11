@@ -1,28 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Grid, TextField, Button, Paper, Typography, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { addCustomer } from '../store/actions/customerActions';
 import colors from '../colors';
 import { TextFieldStyle } from './CreateISP';
+import { fetchISPs } from '../store/actions/ispActions';
+import { fetchPackages } from '../store/actions/packageActions';
 
 function AddCustomer() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [address, setAddress] = useState('');
-  const [area, setArea] = useState('');
+  const [userPackage, setUserPackage] = useState('');
   const [subArea, setSubArea] = useState('');
   const [isp, setIsp] = useState('');
   const [packageType, setPackageType] = useState('');
   const [amountPaid, setAmountPaid] = useState('');
   const [userName, setUserName] = useState('');
-  const [voucherNumber, setVoucherNumber] = useState('');
+  const [cnic, setCnic] = useState('');
 
   const dispatch = useDispatch();
   const role = useSelector((state) => state.auth.user.role);
   const dealerId = useSelector((state) => state.auth.user.uid);
   const selectedDealerId = role === 'admin' ? localStorage.getItem('selectedDealer') : dealerId;
+  const allIsps = useSelector((state) => state.isp.isps);
+  
+  const [packages, setPackages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
+  useEffect(() => {
+    const loadPackages = async () => {
+      setLoading(true);
+      try {
+        const packagesData = isp !== '' && await dispatch(fetchPackages(isp));
+        console.log(packagesData, isp, 'fetched packages');
+        // Convert packages object to array and add id to each package
+        const packagesArray = Object.entries(packagesData).map(([id, pkg]) => ({ ...pkg, id }));
+        setPackages(packagesArray);
+        console.log(packagesArray);
+      } catch (error) {
+        console.error('Error loading packages:', error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadPackages();
+  }, [isp, dispatch]);
+
+  const isLoading = useSelector((state) => state.isp.loading);
+
+
+  useEffect(() => {
+    const localIsps = localStorage.getItem(`isps_${selectedDealerId}`);
+    if (localIsps) {
+      dispatch({
+        type: 'FETCH_ISPS_SUCCESS',
+        payload: JSON.parse(localIsps),
+      });
+    } else {
+      dispatch(fetchISPs(selectedDealerId));
+    }
+  }, [dispatch]);
   const handleSubmit = () => {
     if (role === 'admin' && !selectedDealerId) {
       alert('Please select a dealer first');
@@ -34,13 +75,13 @@ function AddCustomer() {
       lastName,
       phoneNumber,
       address,
-      area,
+      userPackage,
       subArea,
       isp,
       packageType,
       amountPaid,
       userName,
-      voucherNumber,
+      cnic,
     };
 
     dispatch(addCustomer(customerData, selectedDealerId));
@@ -59,19 +100,16 @@ function AddCustomer() {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Name"
-                name="name"
+                label="First Name"
+                name="firstName"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
                 sx={TextFieldStyle}
                 size="small"
-                InputLabelProps={{
-                  style: { color: colors.primary },
-                }}
               />
             </Grid>
-            <Grid item xs={6} sm={6}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Last Name"
@@ -81,12 +119,9 @@ function AddCustomer() {
                 required
                 sx={TextFieldStyle}
                 size="small"
-                InputLabelProps={{
-                  style: { color: colors.primary },
-                }}
               />
             </Grid>
-            <Grid item xs={6} sx={{ mt: 2 }}>
+            <Grid item xs={6} sm={6}>
               <TextField
                 fullWidth
                 label="Phone Number"
@@ -96,12 +131,9 @@ function AddCustomer() {
                 required
                 sx={TextFieldStyle}
                 size="small"
-                InputLabelProps={{
-                  style: { color: colors.primary },
-                }}
               />
             </Grid>
-            <Grid item xs={6} sx={{ mt: 2 }}>
+            <Grid item xs={6}>
               <TextField
                 fullWidth
                 label="Address"
@@ -111,42 +143,9 @@ function AddCustomer() {
                 required
                 sx={TextFieldStyle}
                 size="small"
-                InputLabelProps={{
-                  style: { color: colors.primary },
-                }}
               />
             </Grid>
-            <Grid item xs={6} sx={{ mt: 2 }}>
-              <FormControl fullWidth variant="outlined" sx={TextFieldStyle} size="small">
-                <InputLabel color={colors.primary}>Area</InputLabel>
-                <Select
-                  label="Area"
-                  labelId="area-select-label"
-                  value={area}
-                  onChange={(e) => setArea(e.target.value)}
-                  size="small"
-                >
-                  <MenuItem value="area1">Area 1</MenuItem>
-                  <MenuItem value="area2">Area 2</MenuItem>
-                  <MenuItem value="area3">Area 3</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={6} sx={{ mt: 2 }}>
-              <FormControl fullWidth variant="outlined" sx={TextFieldStyle} size="small">
-                <InputLabel>Sub Area</InputLabel>
-                <Select
-                  label="Sub Area"
-                  value={subArea}
-                  onChange={(e) => setSubArea(e.target.value)}
-                >
-                  <MenuItem value="subarea1">Sub Area 1</MenuItem>
-                  <MenuItem value="subarea2">Sub Area 2</MenuItem>
-                  <MenuItem value="subarea3">Sub Area 3</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={6} sx={{ mt: 2 }}>
+            <Grid item xs={6}>
               <FormControl fullWidth variant="outlined" sx={TextFieldStyle} size="small">
                 <InputLabel>ISP</InputLabel>
                 <Select
@@ -154,42 +153,38 @@ function AddCustomer() {
                   value={isp}
                   onChange={(e) => setIsp(e.target.value)}
                 >
-                  <MenuItem value="isp1">ISP 1</MenuItem>
-                  <MenuItem value="isp2">ISP 2</MenuItem>
-                  <MenuItem value="isp3">ISP 3</MenuItem>
+                  {
+                    allIsps.map((isp) => (
+                      <MenuItem key={isp.id} value={isp.id}>
+                        {isp.name}
+                      </MenuItem>
+                    ))
+                  }
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={6} sx={{ mt: 2 }}>
+            
+            <Grid item xs={6}>
               <FormControl fullWidth variant="outlined" sx={TextFieldStyle} size="small">
-                <InputLabel>Package</InputLabel>
+                <InputLabel color={colors.primary}>Package</InputLabel>
                 <Select
                   label="Package"
-                  value={packageType}
-                  onChange={(e) => setPackageType(e.target.value)}
+                  labelId="area-select-label"
+                  value={userPackage}
+                  onChange={(e) => setUserPackage(e.target.value)}
+                  size="small"
                 >
-                  <MenuItem value="package1">Package 1</MenuItem>
-                  <MenuItem value="package2">Package 2</MenuItem>
-                  <MenuItem value="package3">Package 3</MenuItem>
+                  {
+                    packages.length > 0 && packages.map((pkg) => (
+                      <MenuItem key={pkg.id} value={pkg.pkgName}>
+                        {pkg.pkgName}
+                      </MenuItem>
+                    ))
+                  }
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={6} sx={{ mt: 2 }}>
-              <TextField
-                fullWidth
-                label="Amount Paid"
-                name="amountPaid"
-                value={amountPaid}
-                onChange={(e) => setAmountPaid(e.target.value)}
-                required
-                sx={TextFieldStyle}
-                size="small"
-                InputLabelProps={{
-                  style: { color: colors.primary },
-                }}
-              />
-            </Grid>
-            <Grid item xs={6} sx={{ mt: 2 }}>
+            <Grid item xs={6}>
               <TextField
                 fullWidth
                 label="User Name"
@@ -199,24 +194,18 @@ function AddCustomer() {
                 required
                 sx={TextFieldStyle}
                 size="small"
-                InputLabelProps={{
-                  style: { color: colors.primary },
-                }}
               />
             </Grid>
-            <Grid item xs={6} sx={{ mt: 2 }}>
+            <Grid item xs={6}>
               <TextField
                 fullWidth
-                label="Voucher Number"
-                name="voucherNumber"
-                value={voucherNumber}
-                onChange={(e) => setVoucherNumber(e.target.value)}
+                label="CNIC"
+                name="cnic"
+                value={cnic}
+                onChange={(e) => setCnic(e.target.value)}
                 required
                 sx={TextFieldStyle}
                 size="small"
-                InputLabelProps={{
-                  style: { color: colors.primary },
-                }}
               />
             </Grid>
           </Grid>

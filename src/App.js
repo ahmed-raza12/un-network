@@ -27,6 +27,8 @@ import ISPDetails from './components/ISPDetails';
 import CreatePkg from './components/CreatePkg';
 import UserProfile from './components/UserProfile';
 import PkgDetails from './components/PkgDetails';
+import DealerProfile from './components/DealerProfile';
+import CreateDealer from './components/CreateDealer';
 
 // Initialize Firebase
 initializeApp(firebaseConfig);
@@ -89,6 +91,9 @@ const App = () => {
                 <Route path='/add-customer' element={<ProtectedRoute element={<AddCustomer />} allowedRoles={['admin', 'dealer', 'staff']} />} />
                 <Route path='/invoice' element={<ProtectedRoute element={<Invoice />} allowedRoles={['admin', 'dealer', 'staff']} />} />
                 <Route path='/dealers' element={<ProtectedRoute element={<Dealers />} allowedRoles={['admin']} />} />
+                <Route path='/dealers/:id' element={<ProtectedRoute element={<DealerProfile />} allowedRoles={['admin']} />} />
+                <Route path='/create-dealer' element={<ProtectedRoute element={<CreateDealer />} allowedRoles={['admin']} />} />
+                
                 <Route path="/customer-details/:id" element={<CustomerDetails />} allowedRoles={['admin', 'dealer', 'staff']} /> {/* Route for customer details with ID */}
                 <Route path='/staff' element={<ProtectedRoute element={<Staff />} allowedRoles={['admin', 'dealer']} />} />
                 <Route path="/staff-profile/:id" element={<ProtectedRoute element={<StaffProfile />} allowedRoles={['admin', 'dealer']} />} />

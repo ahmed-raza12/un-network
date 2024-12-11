@@ -15,48 +15,52 @@ import {
 import { useNavigate } from 'react-router-dom';
 import colors from '../colors';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchStaff, fetchStaffByDealerId, updateStaff, deleteStaff } from '../store/actions/staffActions';
+import { fetchStaff, fetchStaffByDealerId } from '../store/actions/staffActions';
+import { fetchDealers } from '../store/actions/dealerActions';
 
 const StaffList = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const staff = useSelector((state) => state.staff.staff);
+    const staffError = useSelector((state) => state.staff.error);
     const dealeruId = useSelector((state) => state.dealers.uid);
     const allDealers = useSelector((state) => state.dealers.dealers);
     const role = useSelector((state) => state.auth.user.role);
-
-    // State for edit dialog
-    const [editDialogOpen, setEditDialogOpen] = useState(false);
-    const [selectedStaff, setSelectedStaff] = useState(null);
-    const [editFormData, setEditFormData] = useState({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        address: '',
-        designation: '',
-        cash: ''
-    });
-
-    // State for delete dialog
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [staffToDelete, setStaffToDelete] = useState(null);
-
+    const [companyCode, setCompanyCode] = useState(null);
+    const user = useSelector((state) => state.auth.user);
+    const [isLoading, setIsLoading] = useState(false);
     // State for selected dealer
     const [selectedDealer, setSelectedDealer] = useState(() => {
         const savedDealer = localStorage.getItem('selectedDealerStaff');
         return savedDealer || dealeruId;
     });
-
+    console.log(user, 'uuuuussssssser')
     // State for loading
-    const [isLoading, setIsLoading] = useState(false);
-
+    useEffect(() => {
+        const localDealers = localStorage.getItem('dealers');
+        if (localDealers) {
+            dispatch({
+                type: 'FETCH_DEALERS_SUCCESS',
+                payload: JSON.parse(localDealers),
+            });
+        } else {
+            console.log('Fetching dealers from Firebase');
+            dispatch(fetchDealers());
+        }
+    }, [dispatch]);
     // Effect to persist selected dealer
     useEffect(() => {
-        if (selectedDealer) {
-            localStorage.setItem('selectedDealerStaff', selectedDealer);
+        if (role === 'admin') {
+            if (selectedDealer) {
+                setCompanyCode(allDealers.find(dealer => dealer.uid === selectedDealer).companyCode);
+                console.log('Selected Dealer:', allDealers.find(dealer => dealer.uid === selectedDealer));
+                localStorage.setItem('selectedDealerStaff', selectedDealer);
+            }
+        } else {
+            setCompanyCode(user.companyCode);
+            console.log('companyCode:', user.companyCode);
         }
-    }, [selectedDealer]);
+    }, [selectedDealer, user]);
 
     // Effect to fetch staff data
     useEffect(() => {
@@ -77,45 +81,8 @@ const StaffList = () => {
         fetchStaffData();
     }, [dispatch, role, selectedDealer]);
 
-    const handleEditClick = (e, staffMember) => {
-        e.stopPropagation();
-        setSelectedStaff(staffMember);
-        setEditFormData({
-            firstName: staffMember.firstName,
-            lastName: staffMember.lastName,
-            email: staffMember.email,
-            phone: staffMember.phone,
-            address: staffMember.address,
-            designation: staffMember.designation,
-            cash: staffMember.cash || ''
-        });
-        setEditDialogOpen(true);
-    };
-
-    const handleDeleteClick = (e, staffMember) => {
-        e.stopPropagation();
-        setStaffToDelete(staffMember);
-        setDeleteDialogOpen(true);
-    };
-
-    const handleEditSubmit = () => {
-        const updatedStaffData = {
-            ...selectedStaff,
-            ...editFormData
-        };
-        dispatch(updateStaff(selectedStaff.id, updatedStaffData));
-        setEditDialogOpen(false);
-    };
-
-    const handleDeleteConfirm = () => {
-        if (staffToDelete) {
-            dispatch(deleteStaff(staffToDelete.id, staffToDelete.uid));
-            setDeleteDialogOpen(false);
-        }
-    };
-
     const handleStaffClick = (staffMember) => {
-        navigate(`/staff-profile/${staffMember.id}`, { state: {...staffMember, dealerId: selectedDealer } });
+        navigate(`/staff-profile/${staffMember.id}`, { state: { ...staffMember, dealerId: selectedDealer, companyCode } });
     };
 
     const handleDealerChange = (event) => {
@@ -142,28 +109,27 @@ const StaffList = () => {
                         </Select>
                     </FormControl>
                 )}
-
+                <Grid item xs={12}>
+                    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            onClick={() => navigate('/create-staff', { state: { dealerId: selectedDealer, companyCode } })}
+                            sx={{
+                                background: colors.gradientBackground,
+                                '&:hover': { background: colors.gradientBackground }
+                            }}
+                        >
+                            {'Create Staff'}
+                        </Button>
+                    </Box>
+                </Grid>
                 {isLoading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
                         <CircularProgress />
                     </Box>
                 ) : (
                     <Grid container spacing={3} mt={2}>
-                        <Grid item xs={12}>
-                            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                                <Button
-                                    type="submit"
-                                    variant="contained"
-                                    onClick={() => navigate('/create-staff')}
-                                    sx={{
-                                        background: colors.gradientBackground,
-                                        '&:hover': { background: colors.gradientBackground }
-                                    }}
-                                >
-                                    {isLoading ? <CircularProgress size={24} /> : 'Create Staff'}
-                                </Button>
-                            </Box>
-                        </Grid>
                         {staff.map((staffMember) => (
                             <Grid item xs={12} sm={6} md={4} key={staffMember.id}>
                                 <Paper
@@ -195,7 +161,7 @@ const StaffList = () => {
 
                                     </Avatar>
                                     <Typography variant="h5" sx={{ mb: 1 }}>
-                                        {staffMember.firstName} {staffMember.lastName}
+                                        {staffMember.name}
                                     </Typography>
                                     <Typography variant="body1" color="primary" sx={{ mb: 1 }}>
                                         {staffMember.phone}

@@ -9,11 +9,11 @@ import {
     CircularProgress
 } from '@mui/material';
 import { green } from '@mui/material/colors';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { addISP } from '../store/actions/ispActions';
 import colors from '../colors';
-
+import { registerDealer } from '../store/actions/dealerActions';
 
 export const TextFieldStyle = {
     label: {
@@ -43,20 +43,26 @@ export const TextFieldStyle = {
     backgroundColor: 'white'
 };
 
-const CreateISP = () => {
+const CreateDealer = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
-    const dealerId = location.state?.dealerId;
+    const dealerId = useSelector((state) => state.auth.user.uid);
+    // const dealerId = location.state?.dealerId;
     const [loading, setLoading] = useState(false);
     const { state } = location;
-    const selectedDealer = state;
+    // const selectedDealer = state;
 
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        city: '',
-        country: '',
+        password: '',
+        phone: '',
+        address: '',
+        area: '',
+        cnic: '',
+        companyCode: '',
+        status: 'Active'
     });
 
     const [snackbar, setSnackbar] = useState({
@@ -76,15 +82,15 @@ const CreateISP = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const dealerId = state?.selectedDealer;
-            await dispatch(addISP(formData, dealerId));
+            console.log(formData);
+            await dispatch(registerDealer(formData.email, formData.password, formData, dealerId));
             setSnackbar({
                 open: true,
-                message: 'ISP created successfully',
+                message: 'Dealer created successfully',
                 severity: 'success'
             });
             setTimeout(() => {
-                navigate('/isp');
+                // navigate('/dealer');
             }, 1500);
         } catch (error) {
             setSnackbar({
@@ -101,7 +107,7 @@ const CreateISP = () => {
         <Box sx={{ p: 3 }}>
             <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.default' }}>
                 <Typography variant="h5" sx={{ mb: 3, color: colors.primary }}>
-                    Create New ISP
+                    Create New Dealer
                 </Typography>
 
                 <form onSubmit={handleSubmit}>
@@ -109,15 +115,27 @@ const CreateISP = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="ISP Name"
+                                label="Name"
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
                                 required
                                 sx={TextFieldStyle}
                                 size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="CNIC"
+                                name="cnic"
+                                value={formData.cnic}
+                                onChange={handleChange}
+                                required
+                                sx={TextFieldStyle}
+                                size="small"
                                 InputLabelProps={{
-                                    style: { color: colors.primary },
+                                    // style: { color: colors.primary },
                                   }}
                             />
                         </Grid>
@@ -131,46 +149,75 @@ const CreateISP = () => {
                                 required
                                 sx={TextFieldStyle}
                                 size="small"
-                                InputLabelProps={{
-                                    style: { color: colors.primary },
-                                  }}
                             />
                         </Grid>
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="City"
-                                name="city"
-                                value={formData.city}
+                                label="Password"
+                                name="password"
+                                type="password"
+                                value={formData.password}
                                 onChange={handleChange}
                                 required
                                 sx={TextFieldStyle}
                                 size="small"
-                                InputLabelProps={{
-                                    style: { color: colors.primary },
-                                  }}
                             />
                         </Grid>
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
-                                label="Country"
-                                name="country"
-                                value={formData.country}
+                                label="Company Code"
+                                name="companyCode"
+                                value={formData.companyCode}
                                 onChange={handleChange}
                                 required
                                 sx={TextFieldStyle}
                                 size="small"
-                                InputLabelProps={{
-                                    style: { color: colors.primary },
-                                  }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Phone"
+                                name="phone"
+                                type="number"
+                                value={formData.phone}
+                                onChange={handleChange}
+                                required
+                                sx={TextFieldStyle}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Address"
+                                name="address"
+                                value={formData.address}
+                                onChange={handleChange}
+                                required
+                                sx={TextFieldStyle}
+                                size="small"
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Area"
+                                name="area"
+                                value={formData.area}
+                                onChange={handleChange}
+                                required
+                                sx={TextFieldStyle}
+                                size="small"
                             />
                         </Grid>
                         <Grid item xs={12}>
                             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                                 <Button
                                     variant="outlined"
-                                    onClick={() => navigate('/isp')}
+                                    onClick={() => navigate('/dealers')}
                                 >
                                     Cancel
                                 </Button>
@@ -183,7 +230,7 @@ const CreateISP = () => {
                                         '&:hover': { background: colors.gradientBackground }
                                     }}
                                 >
-                                    {loading ? <CircularProgress size={24} /> : 'Create ISP'}
+                                    {loading ? <CircularProgress size={24} /> : 'Create Dealer'}
                                 </Button>
                             </Box>
                         </Grid>
@@ -194,4 +241,4 @@ const CreateISP = () => {
     );
 };
 
-export default CreateISP;
+export default CreateDealer;

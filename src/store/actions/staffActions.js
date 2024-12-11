@@ -17,19 +17,20 @@ export const SET_ERROR = "SET_ERROR";
 // Action to add staff
 export const addStaff = (email, password, staffData, dealerId) => async (dispatch, getState) => {
     const auth = getAuth();
+    const {address, name, phone, designation, companyCode} = staffData
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
                 
         // Add dealer role to the Realtime Database
         const userRef = ref(db, `users/${user.uid}`);
-        await set(userRef, { role: 'staff', dealerId, userData: staffData });
+        await set(userRef, { role: 'staff', dealerId, email, address, name, phone, designation, companyCode });
         
         // Add staff data under the logged-in user's node
         const staffRef = ref(db, `staff/${dealerId}`);
         const newStaffRef = push(staffRef);
         const newStaffId = newStaffRef.key;
-        const newStaffData = { id: newStaffId, uid: user.uid, ...staffData };
+        const newStaffData = { id: newStaffId, uid: user.uid, address, email, role: 'staff', name, phone, designation, companyCode, dealerId };
         await set(newStaffRef, newStaffData);
 
         // Clear cache to force a fresh fetch

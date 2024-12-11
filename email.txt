@@ -1,7 +1,7 @@
 staff: accountmanager5.11271830@digitalwavenetworks.com
 pass: staffpass123
 
-dealer: digitalwave.11271830@example.com
+dealer: skynet.1281441@example.com
 pass: password123
 
 skynet.1221742@example.com	

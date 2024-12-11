@@ -1,14 +1,41 @@
 import React, { useState } from 'react';
-import { Box, Grid, TextField, Button, Typography } from '@mui/material';
+import { Box, Grid, TextField, Button, Typography, Paper } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import colors from '../colors';
 import { addStaff } from '../store/actions/staffActions'; // Import your action for adding staff
-import { TextFieldStyle } from './CreateISP';
-import { useNavigate } from 'react-router-dom';
+// import { TextFieldStyle } from './CreateISP';
+import { useLocation, useNavigate } from 'react-router-dom';
 
+
+export const TextFieldStyle = {
+  label: {
+    // color: colors.primary
+  },
+  floatingLabel: {
+    color: colors.primary
+  },
+  '& .MuiSelect-select:focus': {
+    backgroundColor: 'transparent',
+  },
+  '& .MuiFormLabel-root.Mui-focused': {
+    color: colors.primary,
+  },
+
+  '& .MuiOutlinedInput-root': {
+    '& fieldset': {
+      borderColor: '#E0E3E7',
+    },
+    '&:hover fieldset': {
+      borderColor: colors.primary,
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: colors.primary,
+    },
+  },
+  backgroundColor: 'white'
+};
 function CreateStaff() {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,7 +46,9 @@ function CreateStaff() {
   const selectedDealerId = role === 'admin' ? localStorage.getItem('selectedDealerStaff') : dealerId;
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
+  const location = useLocation();
+  const staff = location.state;
+  console.log(staff, 'staff');
   const handleSubmit = () => {
     console.log('Selected Dealer ID:', selectedDealerId);
     if (role === 'admin' && !selectedDealerId) {
@@ -28,13 +57,13 @@ function CreateStaff() {
     }
 
     const staffData = {
-      firstName,
-      lastName,
+      name,
       phone,
       email,
       password,
       address,
       designation,
+      companyCode: staff.companyCode,
       role: "staff"
     };
 
@@ -43,109 +72,96 @@ function CreateStaff() {
   };
 
   return (
-    <Box mt={80} sx={{ backgroundColor: '#f4f6fd', padding: 4, borderRadius: 2, maxWidth: "auto", margin: 'auto' }}>
-      <Grid container spacing={2}>
-        <Grid item xs={6} sx={{ mt: 2 }}>
-          <Typography sx={{ color: colors.primary }}>First Name</Typography>
-          <TextField
-            sx={TextFieldStyle}
-            placeholder="John"
-            fullWidth
-            variant="outlined"
-            size="small"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-          />
+    <Box mt={80} sx={{ minHeight: "100vh", backgroundColor: '#f4f6fd', padding: 4, borderRadius: 2, maxWidth: "auto", margin: 'auto' }}>
+      <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.default' }}>
+        <Typography variant="h5" sx={{ mb: 3, color: colors.primary }}>
+          Create New Staff
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={6} sx={{ mt: 2 }}>
+            <TextField
+              sx={TextFieldStyle}
+              label="Name"
+              fullWidth
+              variant="outlined"
+              size="small"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </Grid>
+          <Grid item xs={6} sx={{ mt: 2 }}>
+            <TextField
+              sx={TextFieldStyle}
+              label="phone number"
+              fullWidth
+              variant="outlined"
+              size="small"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </Grid>
+          <Grid item xs={6} sx={{ mt: 2 }}>
+            <TextField
+              sx={TextFieldStyle}
+              label="Email"
+              fullWidth
+              variant="outlined"
+              size="small"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </Grid>
+          <Grid item xs={6} sx={{ mt: 2 }}>
+            <TextField
+              sx={TextFieldStyle}
+              type="password"
+              label="Password"
+              fullWidth
+              variant="outlined"
+              size="small"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </Grid>
+          <Grid item xs={6} sx={{ mt: 2 }}>
+            <TextField
+              sx={TextFieldStyle}
+              label="Address"
+              fullWidth
+              variant="outlined"
+              size="small"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
+          </Grid>
+          <Grid item xs={6} sx={{ mt: 2 }}>
+            <TextField
+              sx={TextFieldStyle}
+              label="Designation"
+              fullWidth
+              variant="outlined"
+              size="small"
+              value={designation}
+              onChange={(e) => setDesignation(e.target.value)}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <Box sx={{ display: 'flex', gap: 2, mt: 3, justifyContent: 'center' }}>
+              <Button
+                type="submit"
+                variant="contained"
+                onClick={handleSubmit}
+                sx={{
+                  background: colors.gradientBackground,
+                  '&:hover': { background: colors.gradientBackground }
+                }}
+              >
+                Create Staff
+              </Button>
+            </Box>
+          </Grid>
         </Grid>
-        <Grid item xs={6} sx={{ mt: 2 }}>
-          <Typography sx={{ color: colors.primary }}>Last Name</Typography>
-          <TextField
-            sx={TextFieldStyle}
-            placeholder="Doe"
-            fullWidth
-            variant="outlined"
-            size="small"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-          />
-        </Grid>
-        <Grid item xs={6} sx={{ mt: 2 }}>
-          <Typography sx={{ color: colors.primary }}>Phone Number</Typography>
-          <TextField
-            sx={TextFieldStyle}
-            placeholder="03001234567"
-            fullWidth
-            variant="outlined"
-            size="small"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-        </Grid>
-        <Grid item xs={6} sx={{ mt: 2 }}>
-          <Typography sx={{ color: colors.primary }}>Username</Typography>
-          <TextField
-            sx={TextFieldStyle}
-            placeholder="Email"
-            fullWidth
-            variant="outlined"
-            size="small"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </Grid>
-        <Grid item xs={6} sx={{ mt: 2 }}>
-          <Typography sx={{ color: colors.primary }}>Password</Typography>
-          <TextField
-            sx={TextFieldStyle}
-            type="password"
-            placeholder="Password"
-            fullWidth
-            variant="outlined"
-            size="small"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </Grid>
-        <Grid item xs={6} sx={{ mt: 2 }}>
-          <Typography sx={{ color: colors.primary }}>Address</Typography>
-          <TextField
-            sx={TextFieldStyle}
-            placeholder="House No."
-            fullWidth
-            variant="outlined"
-            size="small"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-          />
-        </Grid>
-        <Grid item xs={6} sx={{ mt: 2 }}>
-          <Typography sx={{ color: colors.primary }}>Designation</Typography>
-          <TextField
-            sx={TextFieldStyle}
-            placeholder="Designation"
-            fullWidth
-            variant="outlined"
-            size="small"
-            value={designation}
-            onChange={(e) => setDesignation(e.target.value)}
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <Box sx={{ display: 'flex', gap: 2, mt: 3, justifyContent: 'center' }}>
-            <Button
-              type="submit"
-              variant="contained"
-              onClick={handleSubmit}
-              sx={{
-                background: colors.gradientBackground,
-                '&:hover': { background: colors.gradientBackground }
-              }}
-            >
-              Create Staff
-            </Button>
-          </Box>
-        </Grid>
-      </Grid>
+      </Paper>
     </Box>
   );
 }

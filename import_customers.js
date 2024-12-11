@@ -30,7 +30,7 @@ async function importCustomers() {
         for (const customer of customers) {
             // Generate a new reference with auto ID
 
-            const  uid = '1bHVdTrCiuWAb2VjCRaSlhph0Af2'
+            const  uid = 'NSQYnG8h7QhVfkODe8Tp7P1N6AL2'
             const newCustomerRef = push(ref(db, `customers/${uid}`));
             // Get the auto-generated key
             const newId = newCustomerRef.key;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Container,
@@ -33,20 +33,28 @@ import {
 import colors from '../colors';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateStaff, deleteStaff } from '../store/actions/staffActions';
+import { updateDealer, deleteDealer } from '../store/actions/dealerActions';
+import { getAuth, reauthenticateWithCredential, EmailAuthProvider, updatePassword } from "firebase/auth";
 
-const StaffProfile = () => {
+const DealerProfile = () => {
     const [value, setValue] = useState(0);
     const [isEditing, setIsEditing] = useState(false);
     const [editedStaff, setEditedStaff] = useState(null);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [newPassword, setNewPassword] = useState("");
-    const [passwordError, setPasswordError] = useState("");
     const role = useSelector((state) => state.auth.user.role);
+    const [passwordError, setPasswordError] = useState("");
     const navigate = useNavigate();
     const location = useLocation();
     const dispatch = useDispatch();
-    const staffMember = location.state;
+    const { dealer } = location.state;
+    console.log(dealer, 'dealer');
+
+    useEffect(() => {
+        if (dealer) {
+            setEditedStaff(dealer);
+        }
+    }, [dealer]);
 
     const handleTabChange = (event, newValue) => {
         setValue(newValue);
@@ -54,23 +62,20 @@ const StaffProfile = () => {
 
     const handleEditClick = () => {
         setIsEditing(true);
-        setEditedStaff({ ...staffMember });
+        setEditedStaff({ ...dealer });
     };
 
     const handleCancelEdit = () => {
         setIsEditing(false);
-        setEditedStaff(null);
+        setEditedStaff(dealer);
         setNewPassword("");
         setPasswordError("");
     };
 
     const handleSaveEdit = async () => {
-        if (newPassword) {
-            await handlePasswordChange();
-        }
-        await dispatch(updateStaff(editedStaff));
+        await dispatch(updateDealer(dealer.id, editedStaff));
         setIsEditing(false);
-        navigate(-1); // Navigate back after saving
+        // navigate(-1); 
     };
 
     const handleInputChange = (field) => (event) => {
@@ -85,13 +90,13 @@ const StaffProfile = () => {
 
         try {
             // Here we would call the backend endpoint to update the password
-            // For now, we'll just update the staff member's data
-            const updatedStaff = {
+            // For now, we'll just update the dealer's data
+            const updatedDealer = {
                 ...editedStaff,
                 password: newPassword // Note: In production, never store plain text passwords
             };
 
-            await dispatch(updateStaff(updatedStaff));
+            await dispatch(updateDealer(dealer.id, updatedDealer));
             alert("Password updated successfully!");
             setPasswordError("");
             setNewPassword("");
@@ -107,8 +112,10 @@ const StaffProfile = () => {
 
     const handleDeleteConfirm = async () => {
         try {
-            await dispatch(deleteStaff(staffMember.id, staffMember.uid, staffMember.dealerId));
+            // Wait for deletion and list update to complete
+            await dispatch(deleteDealer(dealer.id, dealer.uid, dealer.dealerId));
             setOpenDeleteDialog(false);
+            // Only navigate back after successful deletion
             navigate(-1);
         } catch (error) {
             console.error('Error deleting staff:', error);
@@ -121,23 +128,23 @@ const StaffProfile = () => {
     };
 
     return (
-        <Container maxWidth="md" sx={{ minHeight: '100vh', }}>
+        <Container maxWidth="md">
             <Box sx={{ display: 'flex', gap: 20, p: 4 }}>
                 {/* Left Section */}
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '30%' }}>
                     <Avatar
                         sx={{ width: 150, height: 150, mb: 2 }}
                         alt="Staff Photo"
-                        src={staffMember.name}
+                        src={dealer.name}
                     />
                     <Typography variant="h5" sx={{ mb: 1 }}>
-                        {staffMember.name}
+                        {dealer.name}
                     </Typography>
                     <Typography variant="body1" color="primary" sx={{ mb: 1 }}>
-                        {staffMember.phone}
+                        {dealer.email}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        {staffMember.designation}
+                        {dealer.phone}
                     </Typography>
                     {!isEditing ? (
                         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -229,12 +236,11 @@ const StaffProfile = () => {
                                 ) : (
                                     <ListItemText
                                         primary="Name"
-                                        secondary={staffMember.name}
+                                        secondary={dealer.name}
                                         secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
                                     />
                                 )}
                             </ListItem>
-
                             <ListItem>
                                 <ListItemIcon>
                                     <Phone sx={{ color: colors.primary }} />
@@ -251,72 +257,29 @@ const StaffProfile = () => {
                                 ) : (
                                     <ListItemText
                                         primary="Phone"
-                                        secondary={staffMember.phone}
-                                        secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
-                                    />
-                                )}
-                            </ListItem>
-
-                            <ListItem>
-                                <ListItemIcon>
-                                    <Badge sx={{ color: colors.primary }} />
-                                </ListItemIcon>
-                                {isEditing ? (
-                                    <TextField
-                                        fullWidth
-                                        label="Designation"
-                                        value={editedStaff.designation}
-                                        onChange={handleInputChange('designation')}
-                                        variant="outlined"
-                                        size="small"
-                                    />
-                                ) : (
-                                    <ListItemText
-                                        primary="Designation"
-                                        secondary={staffMember.designation}
+                                        secondary={dealer.phone}
                                         secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
                                     />
                                 )}
                             </ListItem>
                             <ListItem>
                                 <ListItemIcon>
-                                    <Badge sx={{ color: colors.primary }} />
-                                </ListItemIcon>
-                                {isEditing ? (
-                                    <TextField
-                                        fullWidth
-                                        label="Address"
-                                        value={editedStaff.address}
-                                        onChange={handleInputChange('address')}
-                                        variant="outlined"
-                                        size="small"
-                                    />
-                                ) : (
-                                    <ListItemText
-                                        primary="Address"
-                                        secondary={staffMember.address}
-                                        secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
-                                    />
-                                )}
-                            </ListItem>
-                            <ListItem>
-                                <ListItemIcon>
-                                    <Badge sx={{ color: colors.primary }} />
+                                    <Person sx={{ color: colors.primary }} />
                                 </ListItemIcon>
                                 {isEditing ? (
                                     <TextField
                                         fullWidth
                                         label="Email"
-                                        disabled
                                         value={editedStaff.email}
                                         onChange={handleInputChange('email')}
                                         variant="outlined"
+                                        disabled
                                         size="small"
                                     />
                                 ) : (
                                     <ListItemText
                                         primary="Email"
-                                        secondary={staffMember.email}
+                                        secondary={dealer.email}
                                         secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
                                     />
                                 )}
@@ -328,8 +291,8 @@ const StaffProfile = () => {
                                 {isEditing ? (
                                     <TextField
                                         fullWidth
-                                        label="Company Code"
                                         type="number"
+                                        label="Company Code"
                                         disabled={role === 'admin' ? false : true}
                                         value={editedStaff.companyCode}
                                         onChange={handleInputChange('companyCode')}
@@ -339,11 +302,12 @@ const StaffProfile = () => {
                                 ) : (
                                     <ListItemText
                                         primary="Company Code"
-                                        secondary={staffMember.companyCode}
+                                        secondary={dealer.companyCode}
                                         secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
                                     />
                                 )}
                             </ListItem>
+
                         </List>
                     </Paper>
                 </Box>
@@ -375,4 +339,4 @@ const StaffProfile = () => {
     );
 };
 
-export default StaffProfile;
+export default DealerProfile;

@@ -14,7 +14,6 @@ import {
   Box,
   Alert,
 } from '@mui/material';
-import colors from '../colors';
 import { ref, get } from 'firebase/database';
 import bgImage from '../assets/bg_image.png';
 import loginLogo from '../assets/login_logo.png';
@@ -22,6 +21,7 @@ import loginLogo from '../assets/login_logo.png';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [companyCode, setCompanyCode] = useState(''); // New state for company code
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -39,24 +39,31 @@ const Login = () => {
     const auth = getAuth();
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
       const user = userCredential.user;
       const userId = user.uid; // Get the user's UID
-      const userRef = ref(db, "users/" + userId); // Reference to the user's data in Realtime Database
-      const snapshot = await get(userRef); // Get the user data
-      console.log(snapshot.val())
-      if (snapshot.exists()) {
-          const userData = snapshot.val(); // Get the user data
-          const success = dispatch(login({ email: user.email, uid: user.uid, role: userData.role, dealerId: userData.dealerId, userData: userData.userData })); // Dispatch login action
-          console.log("User data:", userData);
-          if (success) {
-            navigate('/'); // Redirect to dashboard on successful login
-          }      
-          // You can now store this data in your Redux store or context
+
+      // Validate company code
+      const userRef = ref(db, `users/${userId}`); // Reference to the user's data in Realtime Database
+      const userSnapshot = await get(userRef); // Get the user data
+      console.log(userSnapshot.val(), userSnapshot.val().companyCode !== companyCode, companyCode, 'userSnapshot'); // Log the entire snapshot value
+      if (!userSnapshot.exists() || userSnapshot.val().companyCode !== companyCode) {
+        setError('Invalid company code');
+        return;
+      }
+
+      if (userSnapshot.exists()) {
+        const userData = userSnapshot.val(); // Get the user data
+        const success = dispatch(login(userData)); // Dispatch login action
+        if (success) {
+          navigate('/'); // Redirect to dashboard on successful login
+        }
       } else {
-          console.log("No such user document!");
+        setError('User data not found');
       }
     } catch (err) {
-      setError(err.message);
+      console.error(err);
+      setError("Invalid email or password");
     }
   };
 
@@ -98,22 +105,39 @@ const Login = () => {
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <TextField
+                error={error === 'Invalid email or password'}
+                // helperText={error === 'Invalid email or password' ? error : ''}
                 variant="outlined"
                 fullWidth
                 label="Email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setError(''); }}
                 required
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
+                error={error === 'Invalid email or password'}
+                // helperText={error === 'Invalid email or password' ? error : ''}
                 variant="outlined"
                 fullWidth
                 label="Password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                error={error === 'Invalid company code'}
+                helperText={error === 'Invalid company code' ? error : ''}
+                variant="outlined"
+                fullWidth
+                type="number"
+                label="Company Code"
+                value={companyCode}
+                onChange={(e) => { setCompanyCode(Number(e.target.value)); setError(''); }}
                 required
               />
             </Grid>
@@ -130,11 +154,6 @@ const Login = () => {
           </Grid>
         </form>
         {error && <Alert style={{ marginTop: 20, marginBottom: 20 }} severity="error">{error}</Alert>}
-        <Box mt={2}>
-          {/* <Typography variant="body2" align="center">
-            Don't have an account? <a href="/register">Sign Up</a>
-          </Typography> */}
-        </Box>
       </Paper>
     </Container>
   );

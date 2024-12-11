@@ -29,8 +29,8 @@ function SidebarLayout() {
     const [drawerOpen, setDrawerOpen] = useState(false); // State for drawer open/close
     const [anchorEl, setAnchorEl] = useState(null);
     const userRole = useSelector((state) => state.auth.user?.role); // Get user role from state
-    const userData = useSelector((state) => state.auth.user?.userData); // Get user data from state
-    const name = userRole === 'staff' ? userData.firstName : userData.name;
+    const userData = useSelector((state) => state.auth.user); // Get user data from state
+    const name = userData.name;
     const navigate = useNavigate();
     const toggleDrawer = () => {
         setDrawerOpen(!drawerOpen); // Toggle drawer state
@@ -70,8 +70,8 @@ function SidebarLayout() {
             item.path === currentPath ||
             (item.path === '/customers' && (currentPath === '/add-customer' || currentPath === '/customer-details' || currentPath === '/invoice' || currentPath.startsWith('/customer'))) ||
             (item.path === '/staff' && (currentPath === '/create-staff' || currentPath === '/update-staff' || currentPath.startsWith('/staff'))) || // Check for staff routes
-            (item.path === '/isp' && (currentPath === '/create-isp' || currentPath === '/update-staff' || currentPath.startsWith('/isp') || currentPath.startsWith('/create-pkg'))) // Check for staff routes
-
+            (item.path === '/isp' && (currentPath === '/create-isp' || currentPath === '/update-staff' || currentPath.startsWith('/isp') || currentPath.startsWith('/create-pkg'))) || // Check for staff routes
+            (item.path === '/dealers' && (currentPath === '/create-dealer' || currentPath.startsWith('/dealers')))
         );
         setSelectedIndex(activeIndex !== -1 ? activeIndex : 0); // Default to 0 if not found
     }, [location.pathname]); // Run effect when the pathname changes

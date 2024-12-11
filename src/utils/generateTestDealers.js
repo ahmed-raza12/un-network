@@ -14,24 +14,26 @@ const dealerData = [
         name: "Skynet Communications",
         address: "123 Tech Park, Silicon Valley",
         mobile: "1234567890",
+
         email: "skynet@example.com"
     },
-    {
-        name: "Digital Wave Networks",
-        address: "456 Cyber Street, Digital City",
-        mobile: "2345678901",
-        email: "digitalwave@example.com"
-    },
-    {
-        name: "Quantum Internet Solutions",
-        address: "789 Quantum Road, Future Town",
-        mobile: "3456789012",
-        email: "quantum@example.com"
-    }
+    // {
+    //     name: "Digital Wave Networks",
+    //     address: "456 Cyber Street, Digital City",
+    //     mobile: "2345678901",
+    //     email: "digitalwave@example.com"
+    // },
+    // {
+    //     name: "Quantum Internet Solutions",
+    //     address: "789 Quantum Road, Future Town",
+    //     mobile: "3456789012",
+    //     email: "quantum@example.com"
+    // }
 ];
 
-const staffRoles = ['Manager', 'Technician', 'Customer Support', 'Sales Representative', 'Account Manager'];
-
+const staffRoles = ['Manager', 'Technician', 
+    ];
+// 'Customer Support', 'Sales Representative', 'Account Manager'
 const generateStaffEmail = (dealerName, role, index) => {
     const cleanDealerName = dealerName.toLowerCase().replace(/\s+/g, '');
     const timestamp = getTimestampSuffix();
@@ -64,7 +66,7 @@ const generateTestDealers = async () => {
                     ...dealer,
                     email: uniqueEmail
                 };
-                await set(userRef, { role: 'dealer', dealerId: user.uid, userData: dealerDataWithEmail });
+                await set(userRef, { role: 'dealer', dealerId: 'pGzSxZt7b8gODLGLDENRzxRZrHN2', ...dealerDataWithEmail });
 
                 // Add dealer data to dealers collection
                 const dealerRef = ref(db, 'dealers');
@@ -108,7 +110,14 @@ const generateTestDealers = async () => {
                         await set(staffUserRef, { 
                             role: 'staff', 
                             dealerId: user.uid,
-                            userData: staffInfo 
+                            uid: staffUser.uid,
+                            firstName: `${role}`,
+                            lastName: `${i + 1}`,
+                            email: staffEmail,
+                            phone: `555${String(i).padStart(7, '0')}`,
+                            address: `${i + 1} Staff Street`,
+                            designation: role,
+                            role: 'staff'
                         });
 
                         // Add staff under dealer's staff collection

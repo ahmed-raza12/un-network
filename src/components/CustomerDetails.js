@@ -86,10 +86,10 @@ function CustomerDetails() {
     }, [customer]);
 
     useEffect(() => {
-        if (customer?.uid) {
-            dispatch(fetchInvoicesByCustomerUid(customer.uid));
+        if (customer?.id) {
+            dispatch(fetchInvoicesByCustomerUid(customer.id));
         }
-    }, [dispatch, customer?.uid]);
+    }, [dispatch, customer?.id]);
 
     useEffect(() => {
         dispatch(fetchInvoicesByCustomerUid(id));
@@ -305,20 +305,20 @@ function CustomerDetails() {
                                         <TextField
                                             fullWidth
                                             label="Package"
-                                            value={editedCustomer?.packageType || ''}
+                                            value={editedCustomer?.package || ''}
                                             onChange={handleInputChange('package')}
                                         />
                                     ) : (
                                         <ListItemText
                                             primary="Package"
-                                            secondary={customer?.packageType}
+                                            secondary={customer?.package}
                                             secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
                                         />
                                     )}
                                 </ListItem>
                             </List>
                         </Paper>
-                        <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, bgcolor: 'background.default', width: '100%' }}>
+                        {/* <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, bgcolor: 'background.default', width: '100%' }}>
                             <List>
                                 <ListItem>
                                     <ListItemIcon>
@@ -364,7 +364,7 @@ function CustomerDetails() {
                                     />
                                 </ListItem>
                             </List>
-                        </Paper>
+                        </Paper> */}
                     </Box>
                 </Box>
             )}
@@ -422,7 +422,7 @@ function CustomerDetails() {
                 </Box>
             )}
             {/* Pagination */}
-            <Box display="flex" justifyContent="center" mt={2}>
+            {/* <Box display="flex" justifyContent="center" mt={2}>
                 <Pagination
                     count={1}
                     variant="outlined"
@@ -435,7 +435,7 @@ function CustomerDetails() {
                         }
                     }}
                 />
-            </Box>
+            </Box> */}
             {/* Delete Confirmation Dialog */}
             <Dialog
                 open={openDeleteDialog}

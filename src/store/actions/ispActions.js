@@ -62,6 +62,7 @@ export const fetchISPs = (dealerId = null) => async (dispatch, getState) => {
                     id: childSnapshot.key
                 });
             });
+            localStorage.setItem(`isps_${uid}`, JSON.stringify(isps));
         }
 
         dispatch({

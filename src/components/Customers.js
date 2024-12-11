@@ -35,7 +35,7 @@ function Customers() {
     const theme = useTheme();
     const dispatch = useDispatch();
     const { customers, totalPages, currentPage, totalCustomers } = useSelector((state) => state.customers);
-    const dealeruId = useSelector((state) => state.dealers.uid);
+    const dealeruId = useSelector((state) => state.auth.user.uid);
     const allDealers = useSelector((state) => state.dealers.dealers);
     const role = useSelector((state) => state.auth.user.role);
     const error = useSelector((state) => state.customers.error);
@@ -46,7 +46,7 @@ function Customers() {
     const [page, setPage] = useState(1);
     const [selectedDealer, setSelectedDealer] = useState(() => {
         const savedDealer = localStorage.getItem('selectedDealer');
-        return savedDealer || dealeruId;
+        return savedDealer || '';
     });
 
     // State for loading
@@ -92,6 +92,7 @@ function Customers() {
                     }
                 } else if (role === 'dealer') {
                     // Try to get data from localStorage first
+                    console.log('dealeruId:', dealeruId);
                     const storedCustomers = localStorage.getItem(`customers_${dealeruId}`);
                     if (storedCustomers) {
                         const customers = JSON.parse(storedCustomers);
@@ -227,7 +228,7 @@ function Customers() {
                                         onClick={() => handleCustomerClick(customer)}
                                         sx={{ cursor: 'pointer' }}
                                     >
-                                        <TableCell>{((page - 1) * 20) + index + 1}</TableCell>
+                                        <TableCell>{((page - 1) * 10) + index + 1}</TableCell>
                                         <TableCell>{customer.userName}</TableCell>
                                         <TableCell>{customer.fullName} {customer.lastName}</TableCell>
                                         <TableCell>{customer.phone}</TableCell>

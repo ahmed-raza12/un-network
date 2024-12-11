@@ -24,7 +24,7 @@ function Dashboard() {
     const [selectedIndex, setSelectedIndex] = useState(0); // State for selected tab
     const role = useSelector(state => state.auth.user.role); // Get user role from Redux state
     //   const isLoggedIn = useSelector(state => state.auth.isLoggedIn); // Get login status from Redux state
-
+    
     const handleLogout = () => {
         dispatch(logout()); // Dispatch logout action
         // Optionally, you can also sign out from Firebase

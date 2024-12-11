@@ -4,7 +4,6 @@ import { green } from '@mui/material/colors';
 import { useReactToPrint } from 'react-to-print';
 import { createInvoice } from '../store/actions/invoiceActions';
 import { useDispatch, useSelector } from 'react-redux';
-import { ref, db, push, set } from '../firebase'; // Import firebase references
 
 const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
     <div ref={ref}>
@@ -20,11 +19,11 @@ const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
             {/* Header */}
             <Box textAlign="center" mb={2}>
                 <Typography variant="h6" fontWeight="bold" color="#6b49e4">
-                    Payment Receipt
+                    Payment Bill
                 </Typography>
-                <Typography variant="subtitle1" color="textPrimary">
+                {/* <Typography variant="subtitle1" color="textPrimary">
                     Receipt #{receiptData.invoiceNo}
-                </Typography>
+                </Typography> */}
                 <Box sx={{
                     backgroundColor: green[100],
                     padding: '4px 12px',
@@ -40,7 +39,7 @@ const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
 
             {/* User Details */}
             <Box textAlign="left" mt={3}>
-                <Typography variant="h6" fontWeight="bold" color="#6b49e4">
+                <Typography variant="h6" fontWeight="bold" color="textPrimary">
                     {receiptData.customerName}
                 </Typography>
                 <Typography variant="body2" color="textPrimary">
@@ -98,7 +97,7 @@ const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
                     Month
                 </Typography>
                 <Typography variant="body2" color="textPrimary">
-                    {receiptData.month}
+                    {new Date(receiptData.month).toLocaleString('default', {month: 'long'})}
                 </Typography>
             </Grid>
         </Paper>
@@ -109,18 +108,19 @@ const Slips = () => {
     const [invoiceNo, setInvoiceNo] = useState('001');
     const [date, setDate] = useState(new Date().toLocaleString('default', {month: 'short', day: 'numeric', year: 'numeric'}));
     const [userName, setUserName] = useState('');
-    const [chargedBy, setChargedBy] = useState('');
+    // const [chargedBy, setChargedBy] = useState('');
     const [customerId, setCustomerId] = useState('');
     const [customerName, setCustomerName] = useState('');
     const [ispName, setIspName] = useState('');
+    const[pkg, setPkg] = useState('');
     const [amount, setAmount] = useState('');
     const [month, setMonth] = useState('');
     const [address, setAddress] = useState('');
     const [phone, setPhone] = useState('');
+    const chargedBy = useSelector((state) => state.auth.user.name);
     const dispatch = useDispatch();
     const dealerId = useSelector((state) => state.auth.user.uid);
     const componentRef = useRef();
-
     const handlePrint = useReactToPrint({
         content: () => componentRef.current,
     });
@@ -154,6 +154,7 @@ const Slips = () => {
                 setAddress(customerDetails.address || '');
                 setPhone(customerDetails.phone || '');
                 setUserName(customerDetails.userName || '');
+                setPkg(customerDetails.package || '');
                 setCustomerId(customerDetails.id || '');
             } else {
                 setCustomerName('');
@@ -176,6 +177,7 @@ const Slips = () => {
             chargedBy,
             userName,
             customerId,
+            month,
             userName,
             customerName,
             dealerId,
@@ -222,8 +224,8 @@ const Slips = () => {
                             <TextField
                                 label="Date"
                                 type="date"
-                                value={date}
-                                onChange={(e) => setDate(e.target.value)}
+                                value={month}
+                                onChange={(e) => setMonth(e.target.value)}
                                 fullWidth
                                 InputLabelProps={{ shrink: true }}
                                 sx={{ mb: 2 }}
@@ -242,7 +244,7 @@ const Slips = () => {
                             <TextField
                                 label="Name"
                                 value={customerName}
-                                disabled
+                                onChange={() => setCustomerName(userName)}
                                 fullWidth
                                 sx={{ mb: 2 }}
                             />
@@ -251,7 +253,7 @@ const Slips = () => {
                             <TextField
                                 label="ISP Name"
                                 value={ispName}
-                                disabled
+                            
                                 fullWidth
                                 sx={{ mb: 2 }}
                             />
@@ -260,7 +262,7 @@ const Slips = () => {
                             <TextField
                                 label="Address"
                                 value={address}
-                                disabled
+                            
                                 fullWidth
                                 sx={{ mb: 2 }}
                             />
@@ -269,7 +271,7 @@ const Slips = () => {
                             <TextField
                                 label="Phone"
                                 value={phone}
-                                disabled
+                            
                                 fullWidth
                                 sx={{ mb: 2 }}
                             />
@@ -284,7 +286,7 @@ const Slips = () => {
                                 sx={{ mb: 2 }}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        {/* <Grid item xs={12} sm={6}>
                             <FormControl fullWidth sx={{ mb: 2 }}>
                                 <InputLabel>Month</InputLabel>
                                 <Select
@@ -297,12 +299,22 @@ const Slips = () => {
                                     <MenuItem value="ADV">ADV</MenuItem>
                                 </Select>
                             </FormControl>
+                        </Grid> */}
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                label="Package"
+                                value={pkg}
+                                onChange={(e) => setPkg(e.target.value)}
+                                disabled
+                                fullWidth
+                                sx={{ mb: 2 }}
+                            />
                         </Grid>
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 label="Charged By"
                                 value={chargedBy}
-                                onChange={(e) => setChargedBy(e.target.value)}
+                                // onChange={(e) => setChargedBy(e.target.value)}
                                 fullWidth
                                 sx={{ mb: 2 }}
                             />

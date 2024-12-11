@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Table, TableBody, Button, Grid, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, Typography, IconButton, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Box, Table, TableBody, Button, Grid, TableCell, TableContainer, TableHead, TableRow, Avatar, Paper, TextField, Typography, IconButton, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { Search, Edit, Delete } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import CloseIcon from '@mui/icons-material/Close';
@@ -27,11 +27,13 @@ function Dealers() {
         const localDealers = localStorage.getItem('dealers');
         console.log(localDealers, 'localDealers');
         if (localDealers) {
+            console.log(JSON.parse(localDealers), 'localDealers');
             dispatch({
                 type: 'FETCH_DEALERS_SUCCESS',
                 payload: JSON.parse(localDealers),
             });
         } else {
+            console.log('Fetching dealers from Firebase');
             dispatch(fetchDealers());
         }
     }, [dispatch]);
@@ -102,8 +104,11 @@ function Dealers() {
         setSelectedDealer(null);
     };
 
+    const handleDealerClick = (dealer) => {
+        navigate(`/dealers/${dealer.id}`, { state: { dealer } });
+    };
     return (
-        <Box sx={{ pl: 4, pt: 5, minWidth: '100vh' }}>
+        <Box sx={{ pl: 4, pt: 5, minHeight: '100vh' }}>
             <Box display="flex" alignItems="center" mb={2}>
                 <TextField
                     placeholder="Name / Username / Phone Number"
@@ -117,15 +122,7 @@ function Dealers() {
                         )
                     }}
                 />
-                <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => handleClickOpen()}
-                    style={{ marginLeft: '10px', backgroundColor: colors.primary }}
-                >
-                    Create Dealer
-                </Button>
-                <Button
+                {/* <Button
                     variant="contained"
                     color="secondary"
                     onClick={() => {
@@ -138,41 +135,70 @@ function Dealers() {
                     style={{ marginLeft: '10px', backgroundColor: colors.secondary }}
                 >
                     Generate Test Data
-                </Button>
+                </Button> */}
             </Box>
-
-            <TableContainer component={Paper}>
-                <Table>
-                    <TableHead>
-                        <TableRow sx={{ backgroundColor: colors.primary }}>
-                            <TableCell TableCell sx={{ color: 'white' }}>Name</TableCell>
-                            <TableCell TableCell sx={{ color: 'white' }}>Email</TableCell>
-                            <TableCell TableCell sx={{ color: 'white' }}>Phone</TableCell>
-                            <TableCell TableCell sx={{ color: 'white' }}>Address</TableCell>
-                            <TableCell TableCell sx={{ color: 'white' }}>Actions</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {dealers.map((dealer) => (
-                            <TableRow key={dealer.id}>
-                                <TableCell>{dealer.name}</TableCell>
-                                <TableCell>{dealer.email}</TableCell>
-                                <TableCell>{dealer.phone}</TableCell>
-                                <TableCell>{dealer.address}</TableCell>
-                                <TableCell>
-                                    <IconButton onClick={() => handleClickOpen(dealer)} color="primary">
-                                        <Edit />
-                                    </IconButton>
-                                    <IconButton onClick={() => handleDeleteClick(dealer)} color="error">
-                                        <Delete />
-                                    </IconButton>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-
+            <Grid container spacing={3} mt={2}>
+                <Grid item xs={12}>
+                    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                        <Button
+                            variant="contained"
+                            onClick={() => navigate('/create-dealer')}
+                            sx={{
+                                background: colors.gradientBackground,
+                                '&:hover': { background: colors.gradientBackground }
+                            }}
+                        >
+                            Create Dealer
+                        </Button>
+                    </Box>
+                </Grid>
+                {dealers.map((dealer) => (
+                    <Grid item xs={12} sm={6} md={4} lg={4} key={dealer.id}>
+                        <Paper
+                            elevation={3}
+                            sx={{
+                                display: 'flex',
+                                borderRadius: 5,
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                padding: 4,
+                                mb: 2,
+                                cursor: 'pointer',
+                                position: 'relative',
+                                '&:hover': {
+                                    transform: 'scale(1.02)',
+                                    transition: 'transform 0.2s ease-in-out'
+                                }
+                            }}
+                            onClick={() => handleDealerClick(dealer)}
+                        >
+                            <Avatar
+                                sx={{
+                                    width: 120,
+                                    height: 120,
+                                    mb: 2,
+                                    bgcolor: colors.primary,
+                                    fontSize: '2.5rem'
+                                }}
+                            >
+                                {dealer.name ? dealer.name.charAt(0).toUpperCase() : 'D'}
+                            </Avatar>
+                            <Typography variant="h5" sx={{ mb: 1 }}>
+                                {dealer.name}
+                            </Typography>
+                            <Typography variant="body1" color="primary" sx={{ mb: 1 }}>
+                                {dealer.companyName}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {dealer.email}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {dealer.phone}
+                            </Typography>
+                        </Paper>
+                    </Grid>
+                ))}
+            </Grid>
             <Dialog open={open} onClose={handleClose}>
                 <DialogTitle sx={{ display: 'flex', mb: 5, justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.primary, color: 'white' }}>
                     <Typography variant="h6" sx={{ flexGrow: 1, textAlign: 'center' }}>{editMode ? 'Update Dealer' : 'Create Dealer'}</Typography>
@@ -256,7 +282,7 @@ function Dealers() {
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Box>
+        </Box >
     );
 }
 

@@ -50,17 +50,18 @@ export const logout = () => {
   };
 };
 
+
+
+
 export const updateProfile = (userData) => {
   return async (dispatch) => {
     try {
       const { uid } = userData;
+      console.log(userData, 'userData')
       const userRef = ref(db, `users/${uid}`);
       
       // Update user data in Firebase
-      await set(userRef, {
-        ...userData,
-        updatedAt: new Date().toISOString()
-      });
+      await set(userRef, userData);
 
       // If user is staff or dealer, update their respective collections
       if (userData.role === 'staff') {

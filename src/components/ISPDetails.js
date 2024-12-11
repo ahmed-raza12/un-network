@@ -257,28 +257,6 @@ function ISPDetails() {
                                             />
                                         )}
                                     </ListItem>
-
-                                    <ListItem>
-                                        <ListItemIcon>
-                                            <Person sx={{ color: 'darkblue' }} />
-                                        </ListItemIcon>
-                                        {isEditing ? (
-                                            <TextField
-                                                fullWidth
-                                                label="Package"
-                                                value={editedData.package}
-                                                onChange={handleInputChange('package')}
-                                                variant="outlined"
-                                                size="small"
-                                            />
-                                        ) : (
-                                            <ListItemText
-                                                primary="Package"
-                                                secondary={isp.package}
-                                                secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                            />
-                                        )}
-                                    </ListItem>
                                     <ListItem>
                                         <ListItemIcon>
                                             <AddIcCallOutlined sx={{ color: 'darkblue' }} />
@@ -296,48 +274,6 @@ function ISPDetails() {
                                             <ListItemText
                                                 primary="Email"
                                                 secondary={isp.email}
-                                                secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                            />
-                                        )}
-                                    </ListItem>
-                                    <ListItem>
-                                        <ListItemIcon>
-                                            <Wallet sx={{ color: 'darkblue' }} />
-                                        </ListItemIcon>
-                                        {isEditing ? (
-                                            <TextField
-                                                fullWidth
-                                                label="Phone"
-                                                value={editedData.phone}
-                                                onChange={handleInputChange('phone')}
-                                                variant="outlined"
-                                                size="small"
-                                            />
-                                        ) : (
-                                            <ListItemText
-                                                primary="Phone"
-                                                secondary={isp.phone}
-                                                secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                            />
-                                        )}
-                                    </ListItem>
-                                    <ListItem>
-                                        <ListItemIcon>
-                                            <CalendarToday sx={{ color: 'darkblue' }} />
-                                        </ListItemIcon>
-                                        {isEditing ? (
-                                            <TextField
-                                                fullWidth
-                                                label="Address"
-                                                value={editedData.address}
-                                                onChange={handleInputChange('address')}
-                                                variant="outlined"
-                                                size="small"
-                                            />
-                                        ) : (
-                                            <ListItemText
-                                                primary="Address"
-                                                secondary={isp.address}
                                                 secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
                                             />
                                         )}
