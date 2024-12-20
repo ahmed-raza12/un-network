@@ -8,7 +8,7 @@ import {
 
 const initialState = {
     customers: [],
-    totalPages: 0,
+    totalPages: 1,
     currentPage: 1,
     totalCustomers: 0,
     loading: false,
@@ -26,11 +26,10 @@ const customerReducer = (state = initialState, action) => {
         case FETCH_CUSTOMERS_SUCCESS:
             return {
                 ...state,
-                customers: action.payload.customers || [],
-                totalPages: action.payload.totalPages || 0,
-                currentPage: action.payload.currentPage || 1,
-                totalCustomers: action.payload.totalCustomers || 0,
-                loading: false,
+                customers: action.payload.customers || [], // Ensure customers is an array
+                currentPage: action.payload.currentPage,
+                totalPages: action.payload.totalPages,
+                totalCustomers: action.payload.totalCustomers,
                 error: null
             };
         case FETCH_CUSTOMERS_FAILURE:
@@ -57,6 +56,17 @@ const customerReducer = (state = initialState, action) => {
                 loading: false,
                 error: null
             };
+        case FETCH_CUSTOMERS_SUCCESS:
+        case 'SEARCH_CUSTOMERS_SUCCESS':
+            return {
+                ...state,
+                customers: action.payload.customers,
+                currentPage: action.payload.currentPage,
+                totalPages: action.payload.totalPages,
+                totalCustomers: action.payload.totalCustomers,
+                error: null
+            };
+
         default:
             return state;
     }

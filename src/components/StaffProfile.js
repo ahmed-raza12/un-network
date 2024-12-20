@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Container,
@@ -9,6 +9,15 @@ import {
     ListItemIcon,
     ListItemText,
     Button,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    styled,
+    TableFooter,
+    CircularProgress,
     Switch,
     Tabs,
     Tab,
@@ -34,7 +43,16 @@ import colors from '../colors';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateStaff, deleteStaff } from '../store/actions/staffActions';
+import { fetchTodayInvoicesByStaff } from '../store/actions/reportActions';
 
+
+
+const StyledTab = styled(Tab)(({ theme }) => ({
+    '&.Mui-selected': {
+        background: 'linear-gradient(90deg, #00A36C 0%, #2AAA8A 100%)',
+        color: 'white',
+    },
+}));
 const StaffProfile = () => {
     const [value, setValue] = useState(0);
     const [isEditing, setIsEditing] = useState(false);
@@ -43,10 +61,22 @@ const StaffProfile = () => {
     const [newPassword, setNewPassword] = useState("");
     const [passwordError, setPasswordError] = useState("");
     const role = useSelector((state) => state.auth.user.role);
+    const user = useSelector((state) => state.auth.user);
+    const dealerId = user.role === 'staff' ? user.dealerId : user.uid;
     const navigate = useNavigate();
     const location = useLocation();
+    const { todayInvoices, loading, error } = useSelector((state) => state.report);
     const dispatch = useDispatch();
     const staffMember = location.state;
+    const totalInvoices = todayInvoices.length;
+    const totalAmount = todayInvoices.reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
+
+    console.log(todayInvoices, 'todayInvoices');
+    useEffect(() => {
+        // Fetch invoices when component mounts or when selectedStaffId changes
+        dispatch(fetchTodayInvoicesByStaff(dealerId, staffMember.uid));
+    }, [dispatch, dealerId, staffMember.uid]);
+
 
     const handleTabChange = (event, newValue) => {
         setValue(newValue);
@@ -200,155 +230,221 @@ const StaffProfile = () => {
                             value={value}
                             onChange={handleTabChange}
                             sx={{
-                                '& .MuiTab-root': {
-                                    color: 'primary',
-                                    '&.Mui-selected': { color: colors.primary }
+                                maxWidth: "100%",
+                                // margin: 'auto',
+                                borderRadius: { xs: 2, md: 2 },
+                                backgroundColor: '#e0e7ff',
+                                display: 'flex',
+                                justifyContent: 'space-evenly', // Even spacing between tabs
+                            }}
+                            TabIndicatorProps={{
+                                style: {
+                                    background: colors.gradientBackground,
                                 },
-                                '& .MuiTabs-indicator': { backgroundColor: colors.primary }
                             }}
                         >
-                            <Tab label="Profile" />
+                            <StyledTab
+                                label="Profile"
+                                sx={{
+                                    flex: 1, // Equal width for all tabs
+                                    textAlign: 'center', // Center text
+                                }}
+                            />
+                            <StyledTab
+                                label="Transactions"
+                                sx={{
+                                    flex: 1, // Equal width for all tabs
+                                    textAlign: 'center', // Center text
+                                }}
+                            />
                         </Tabs>
                     </Box>
 
-                    <Paper elevation={5} sx={{ p: 3, borderRadius: 10, bgcolor: 'background.default' }}>
-                        <List>
-                            <ListItem>
-                                <ListItemIcon>
-                                    <Person sx={{ color: colors.primary }} />
-                                </ListItemIcon>
-                                {isEditing ? (
-                                    <TextField
-                                        fullWidth
-                                        label="Name"
-                                        value={editedStaff.name}
-                                        onChange={handleInputChange('name')}
-                                        variant="outlined"
-                                        size="small"
-                                    />
-                                ) : (
-                                    <ListItemText
-                                        primary="Name"
-                                        secondary={staffMember.name}
-                                        secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
-                                    />
-                                )}
-                            </ListItem>
+                    {value === 0 ?
+                        <Paper elevation={5} sx={{ p: 3, borderRadius: 10, bgcolor: 'background.default' }}>
+                            <List>
+                                <ListItem>
+                                    <ListItemIcon>
+                                        <Person sx={{ color: colors.primary }} />
+                                    </ListItemIcon>
+                                    {isEditing ? (
+                                        <TextField
+                                            fullWidth
+                                            label="Name"
+                                            value={editedStaff.name}
+                                            onChange={handleInputChange('name')}
+                                            variant="outlined"
+                                            size="small"
+                                        />
+                                    ) : (
+                                        <ListItemText
+                                            primary="Name"
+                                            secondary={staffMember.name}
+                                            secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
+                                        />
+                                    )}
+                                </ListItem>
 
-                            <ListItem>
-                                <ListItemIcon>
-                                    <Phone sx={{ color: colors.primary }} />
-                                </ListItemIcon>
-                                {isEditing ? (
-                                    <TextField
-                                        fullWidth
-                                        label="Phone"
-                                        value={editedStaff.phone}
-                                        onChange={handleInputChange('phone')}
-                                        variant="outlined"
-                                        size="small"
-                                    />
-                                ) : (
-                                    <ListItemText
-                                        primary="Phone"
-                                        secondary={staffMember.phone}
-                                        secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
-                                    />
-                                )}
-                            </ListItem>
+                                <ListItem>
+                                    <ListItemIcon>
+                                        <Phone sx={{ color: colors.primary }} />
+                                    </ListItemIcon>
+                                    {isEditing ? (
+                                        <TextField
+                                            fullWidth
+                                            label="Phone"
+                                            value={editedStaff.phone}
+                                            onChange={handleInputChange('phone')}
+                                            variant="outlined"
+                                            size="small"
+                                        />
+                                    ) : (
+                                        <ListItemText
+                                            primary="Phone"
+                                            secondary={staffMember.phone}
+                                            secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
+                                        />
+                                    )}
+                                </ListItem>
 
-                            <ListItem>
-                                <ListItemIcon>
-                                    <Badge sx={{ color: colors.primary }} />
-                                </ListItemIcon>
-                                {isEditing ? (
-                                    <TextField
-                                        fullWidth
-                                        label="Designation"
-                                        value={editedStaff.designation}
-                                        onChange={handleInputChange('designation')}
-                                        variant="outlined"
-                                        size="small"
-                                    />
-                                ) : (
-                                    <ListItemText
-                                        primary="Designation"
-                                        secondary={staffMember.designation}
-                                        secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
-                                    />
-                                )}
-                            </ListItem>
-                            <ListItem>
-                                <ListItemIcon>
-                                    <Badge sx={{ color: colors.primary }} />
-                                </ListItemIcon>
-                                {isEditing ? (
-                                    <TextField
-                                        fullWidth
-                                        label="Address"
-                                        value={editedStaff.address}
-                                        onChange={handleInputChange('address')}
-                                        variant="outlined"
-                                        size="small"
-                                    />
-                                ) : (
-                                    <ListItemText
-                                        primary="Address"
-                                        secondary={staffMember.address}
-                                        secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
-                                    />
-                                )}
-                            </ListItem>
-                            <ListItem>
-                                <ListItemIcon>
-                                    <Badge sx={{ color: colors.primary }} />
-                                </ListItemIcon>
-                                {isEditing ? (
-                                    <TextField
-                                        fullWidth
-                                        label="Email"
-                                        disabled
-                                        value={editedStaff.email}
-                                        onChange={handleInputChange('email')}
-                                        variant="outlined"
-                                        size="small"
-                                    />
-                                ) : (
-                                    <ListItemText
-                                        primary="Email"
-                                        secondary={staffMember.email}
-                                        secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
-                                    />
-                                )}
-                            </ListItem>
-                            <ListItem>
-                                <ListItemIcon>
-                                    <Badge sx={{ color: colors.primary }} />
-                                </ListItemIcon>
-                                {isEditing ? (
-                                    <TextField
-                                        fullWidth
-                                        label="Company Code"
-                                        type="number"
-                                        disabled={role === 'admin' ? false : true}
-                                        value={editedStaff.companyCode}
-                                        onChange={handleInputChange('companyCode')}
-                                        variant="outlined"
-                                        size="small"
-                                    />
-                                ) : (
-                                    <ListItemText
-                                        primary="Company Code"
-                                        secondary={staffMember.companyCode}
-                                        secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
-                                    />
-                                )}
-                            </ListItem>
-                        </List>
-                    </Paper>
+                                <ListItem>
+                                    <ListItemIcon>
+                                        <Badge sx={{ color: colors.primary }} />
+                                    </ListItemIcon>
+                                    {isEditing ? (
+                                        <TextField
+                                            fullWidth
+                                            label="Designation"
+                                            value={editedStaff.designation}
+                                            onChange={handleInputChange('designation')}
+                                            variant="outlined"
+                                            size="small"
+                                        />
+                                    ) : (
+                                        <ListItemText
+                                            primary="Designation"
+                                            secondary={staffMember.designation}
+                                            secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
+                                        />
+                                    )}
+                                </ListItem>
+                                <ListItem>
+                                    <ListItemIcon>
+                                        <Badge sx={{ color: colors.primary }} />
+                                    </ListItemIcon>
+                                    {isEditing ? (
+                                        <TextField
+                                            fullWidth
+                                            label="Address"
+                                            value={editedStaff.address}
+                                            onChange={handleInputChange('address')}
+                                            variant="outlined"
+                                            size="small"
+                                        />
+                                    ) : (
+                                        <ListItemText
+                                            primary="Address"
+                                            secondary={staffMember.address}
+                                            secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
+                                        />
+                                    )}
+                                </ListItem>
+                                <ListItem>
+                                    <ListItemIcon>
+                                        <Badge sx={{ color: colors.primary }} />
+                                    </ListItemIcon>
+                                    {isEditing ? (
+                                        <TextField
+                                            fullWidth
+                                            label="Email"
+                                            disabled
+                                            value={editedStaff.email}
+                                            onChange={handleInputChange('email')}
+                                            variant="outlined"
+                                            size="small"
+                                        />
+                                    ) : (
+                                        <ListItemText
+                                            primary="Email"
+                                            secondary={staffMember.email}
+                                            secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
+                                        />
+                                    )}
+                                </ListItem>
+                                <ListItem>
+                                    <ListItemIcon>
+                                        <Badge sx={{ color: colors.primary }} />
+                                    </ListItemIcon>
+                                    {isEditing ? (
+                                        <TextField
+                                            fullWidth
+                                            label="Company Code"
+                                            type="number"
+                                            disabled={role === 'admin' ? false : true}
+                                            value={editedStaff.companyCode}
+                                            onChange={handleInputChange('companyCode')}
+                                            variant="outlined"
+                                            size="small"
+                                        />
+                                    ) : (
+                                        <ListItemText
+                                            primary="Company Code"
+                                            secondary={staffMember.companyCode}
+                                            secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
+                                        />
+                                    )}
+                                </ListItem>
+                            </List>
+                        </Paper>
+                        :
+                        loading ? (
+                            <Box display="flex" justifyContent="center" p={3}>
+                                <CircularProgress />
+                            </Box>
+                        ) : todayInvoices.length === 0 ? (
+                            <Typography variant="body1" align="center" p={3}>
+                                No invoices found for today.
+                            </Typography>
+                        ) : (
+                            <TableContainer component={Paper}>
+                                <Table>
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Invoice No</TableCell>
+                                            <TableCell>Time</TableCell>
+                                            <TableCell align="right">Amount</TableCell>
+
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {todayInvoices.map((invoice) => (
+                                            <TableRow key={invoice.id}>
+                                                <TableCell>{invoice.invoiceNo || 'N/A'}</TableCell>
+                                                <TableCell>
+                                                    {invoice.createdAt ?
+                                                        new Date(invoice.createdAt).toLocaleTimeString() :
+                                                        'N/A'
+                                                    }
+                                                </TableCell>
+                                                {/* <TableCell>{invoice.customerName || 'N/A'}</TableCell> */}
+                                                {/* <TableCell>{invoice.ispName || 'N/A'}</TableCell> */}
+                                                <TableCell align="right">Rs. {invoice.amount || 0}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                    <TableFooter>
+                                        <TableRow>
+                                            <TableCell>Total Invoices: {totalInvoices}</TableCell>
+                                            <TableCell></TableCell>
+                                            <TableCell align="right">Total Amount: Rs. {totalAmount}</TableCell>
+                                        </TableRow>
+                                    </TableFooter>
+
+                                </Table>
+                            </TableContainer>
+                        )}
                 </Box>
             </Box>
-
             {/* Delete Confirmation Dialog */}
             <Dialog
                 open={openDeleteDialog}

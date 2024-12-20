@@ -24,7 +24,7 @@ export const addStaff = (email, password, staffData, dealerId) => async (dispatc
                 
         // Add dealer role to the Realtime Database
         const userRef = ref(db, `users/${user.uid}`);
-        await set(userRef, { role: 'staff', dealerId, email, address, name, phone, designation, companyCode });
+        await set(userRef, { role: 'staff', dealerId, email, address, name, phone, designation, companyCode, uid: user.uid });
         
         // Add staff data under the logged-in user's node
         const staffRef = ref(db, `staff/${dealerId}`);
@@ -56,8 +56,9 @@ export const addStaff = (email, password, staffData, dealerId) => async (dispatc
 export const fetchStaff = () => async (dispatch, getState) => {
     try {
         // Get the uid from the auth reducer
-        const uid = getState().auth.user.uid;
-        console.log(uid);
+        const uid = getState().auth.user.role === 'staff' ? getState().auth.user.dealerId : getState().auth.user.uid;
+        console.log('Fetching staff', uid);
+        // console.log(uid);
         
         const staffRef = ref(db, `staff/${uid}`);
         const snapshot = await get(staffRef);

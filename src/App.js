@@ -29,6 +29,7 @@ import UserProfile from './components/UserProfile';
 import PkgDetails from './components/PkgDetails';
 import DealerProfile from './components/DealerProfile';
 import CreateDealer from './components/CreateDealer';
+import ManualSlip from './components/ManualSlip';
 
 // Initialize Firebase
 initializeApp(firebaseConfig);
@@ -101,6 +102,8 @@ const App = () => {
                 <Route path="/update-staff" element={<ProtectedRoute element={<UpdateStaff />} allowedRoles={['admin', 'dealer']} />} />
                 <Route path="/reports" element={<ProtectedRoute element={<Report />} allowedRoles={['admin', 'dealer', 'staff']} />} />
                 <Route path="/slips" element={<ProtectedRoute element={<Slips />} allowedRoles={['admin', 'dealer', 'staff']} />} />
+                <Route path="/manual-slip" element={<ProtectedRoute element={<ManualSlip />} allowedRoles={['admin', 'dealer']} />} />
+                
                 <Route path="/due-customers" element={<ProtectedRoute element={<DueCustomers />} allowedRoles={['admin', 'dealer', 'staff']} />} />
                 <Route path="/isp" element={<ProtectedRoute element={<ISP />} allowedRoles={['admin', 'dealer', 'staff']} />} />
                 <Route path="/create-isp" element={<ProtectedRoute element={<CreateISP />} allowedRoles={['admin', 'dealer', 'staff']} />} />

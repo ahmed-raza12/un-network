@@ -56,6 +56,8 @@ function SidebarLayout() {
         { text: 'ISP', icon: <Groups2 fontSize="medium" />, path: '/isp', roles: ['admin', 'dealer'] },
         { text: 'Reports', icon: <ReportIcon fontSize="medium" />, path: '/reports', roles: ['admin', 'dealer', 'staff'] },
         { text: 'Slips', icon: <ReportIcon fontSize="medium" />, path: '/slips', roles: ['admin', 'dealer', 'staff'] },
+        { text: 'Manual Slip', icon: <ReportIcon fontSize="medium" />, path: '/manual-slip', roles: ['admin', 'dealer'] },
+        
         // { text: 'Due Customers', icon: <ReportIcon fontSize="medium" />, path: '/due-customers', roles: ['admin', 'dealer', 'staff'] },
 
     ];

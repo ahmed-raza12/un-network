@@ -178,8 +178,15 @@ function CustomerDetails() {
                     },
                 }}
             >
-                <StyledTab label="Profile" />
-                <StyledTab label="Invoices" />
+                <StyledTab sx={{
+                    flex: 1, // Equal width for all tabs
+                    textAlign: 'center', // Center text
+                }}
+                    label="Profile" />
+                <StyledTab sx={{
+                    flex: 1, // Equal width for all tabs
+                    textAlign: 'center', // Center text
+                }} label="Invoices" />
             </Tabs>
 
             {tabValue === 0 && (

@@ -10,7 +10,8 @@ import {
     FormControl,
     InputLabel,
     TextField,
-    IconButton,
+    Checkbox,
+    Toolbar,
     Button,
     TableContainer,
     TableHead,
@@ -18,205 +19,212 @@ import {
     Paper,
     Typography,
     Pagination,
+    IconButton,
     CircularProgress
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-
-import { Search, Link, Public } from '@mui/icons-material';
-import { fetchCustomers, fetchCustomersByDealerId, getPaginatedData } from '../store/actions/customerActions';
+import { fetchCustomers, deleteCustomers, searchCustomers } from '../store/actions/customerActions';
 import { useNavigate } from 'react-router-dom';
 import colors from '../colors';
-import { useTheme } from '@mui/material/styles';
-import { fetchDealers } from '../store/actions/dealerActions';
-import { ref, onValue } from 'firebase/database';
-import {db} from '../firebase';
+import { Search as SearchIcon, Visibility as VisibilityIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
 function Customers() {
-    const theme = useTheme();
     const dispatch = useDispatch();
-    const { customers, totalPages, currentPage, totalCustomers } = useSelector((state) => state.customers);
-    const dealeruId = useSelector((state) => state.auth.user.uid);
-    const allDealers = useSelector((state) => state.dealers.dealers);
+    const { customers, currentPage, totalPages, totalCustomers } = useSelector((state) => state.customers);
     const role = useSelector((state) => state.auth.user.role);
-    const error = useSelector((state) => state.customers.error);
+    const dealeruId = useSelector((state) => state.auth.user.uid);
     const navigate = useNavigate();
 
-    // State for search and pagination
-    const [searchQuery, setSearchQuery] = useState('');
+    // States for search and pagination
+    const [inputValue, setInputValue] = useState(''); // For text input value
+    const [searchQuery, setSearchQuery] = useState(''); // Actual query to trigger search
     const [page, setPage] = useState(1);
-    const [selectedDealer, setSelectedDealer] = useState(() => {
-        const savedDealer = localStorage.getItem('selectedDealer');
-        return savedDealer || '';
-    });
-
-    // State for loading
+    const [isSearchMode, setIsSearchMode] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedCustomerIds, setSelectedCustomerIds] = useState([]);
 
-    // Effect to handle dealer selection persistence
+    // Fetch customers on page load or when searchQuery/page changes
     useEffect(() => {
-        if (selectedDealer) {
-            localStorage.setItem('selectedDealer', selectedDealer);
+        if (!isSearchMode) {
+            fetchCustomersData();
         }
-    }, [selectedDealer]);
+    }, [page, isSearchMode]);
 
-    // Effect to load dealers for admin
-    useEffect(() => {
-        const localDealers = localStorage.getItem('dealers');
-        if (localDealers) {
-            dispatch({
-                type: 'FETCH_DEALERS_SUCCESS',
-                payload: JSON.parse(localDealers),
-            });
-        } else {
-            dispatch(fetchDealers());
+    const fetchCustomersData = async () => {
+        setIsLoading(true);
+        try {
+            const targetDealerId = role === 'dealer' ? dealeruId : null;
+            await dispatch(fetchCustomers(page, '', targetDealerId));
+        } catch (error) {
+            console.error('Error fetching customers:', error);
+        } finally {
+            setIsLoading(false);
         }
-    }, [dispatch]);
-
-    // Effect to fetch customers based on selected dealer
-    useEffect(() => {
-        const fetchCustomersData = async () => {
-            setIsLoading(true);
-            try {
-                if (role === 'admin' && selectedDealer) {
-                    // Try to get data from localStorage first
-                    const storedCustomers = localStorage.getItem(`customers_${selectedDealer}`);
-                    if (storedCustomers) {
-                        const customers = JSON.parse(storedCustomers);
-                        const paginatedData = getPaginatedData(customers, page, searchQuery);
-                        dispatch({
-                            type: 'FETCH_CUSTOMERS_SUCCESS',
-                            payload: paginatedData
-                        });
-                    } else {
-                        await dispatch(fetchCustomersByDealerId(selectedDealer, page, searchQuery));
-                    }
-                } else if (role === 'dealer') {
-                    // Try to get data from localStorage first
-                    console.log('dealeruId:', dealeruId);
-                    const storedCustomers = localStorage.getItem(`customers_${dealeruId}`);
-                    if (storedCustomers) {
-                        const customers = JSON.parse(storedCustomers);
-                        const paginatedData = getPaginatedData(customers, page, searchQuery);
-                        dispatch({
-                            type: 'FETCH_CUSTOMERS_SUCCESS',
-                            payload: paginatedData
-                        });
-                    } else {
-                        await dispatch(fetchCustomersByDealerId(dealeruId, page, searchQuery));
-                    }
-                } else {
-                    await dispatch(fetchCustomers(page, searchQuery));
-                }
-            } catch (error) {
-                console.error('Error fetching customers:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchCustomersData();
-    }, [searchQuery, page, selectedDealer, role, dealeruId, dispatch, customers.length]);
-
-    // Listen for customer updates
-    useEffect(() => {
-        const customersRef = ref(db, `customers/${selectedDealer || dealeruId}`);
-        const unsubscribe = onValue(customersRef, (snapshot) => {
-            if (snapshot.exists()) {
-                dispatch(fetchCustomersByDealerId(selectedDealer || dealeruId, page, searchQuery));
-            }
-        });
-
-        return () => unsubscribe();
-    }, [selectedDealer, dealeruId, page, searchQuery, dispatch]);
-
-    const handleSearchChange = (event) => {
-        setSearchQuery(event.target.value);
-        setPage(1);
+    };
+    // Handle search input change
+    const handleInputChange = (event) => {
+        setInputValue(event.target.value);
+        if (event.target.value === '') {
+            setIsSearchMode(false);
+            fetchCustomersData();
+        }
     };
 
+    // Handle search button click
+    const handleSearchClick = async () => {
+        if (!inputValue.trim()) return;
+
+        setIsLoading(true);
+        setIsSearchMode(true);
+        try {
+            await dispatch(searchCustomers(inputValue.trim(), dealeruId));
+        } catch (error) {
+            console.error('Error searching customers:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Handle search on Enter key press
+    const handleKeyPress = (event) => {
+        if (event.key === 'Enter') {
+            handleSearchClick();
+        }
+    };
+
+    // Handle pagination change (only available in normal mode)
     const handlePageChange = (event, newPage) => {
-        setPage(newPage);
+        if (!isSearchMode) {
+            setPage(newPage);
+        }
     };
 
-    const handleDealerChange = (event) => {
-        setSelectedDealer(event.target.value);
+    const handleResetSearch = () => {
+        setInputValue('');
+        setIsSearchMode(false);
         setPage(1);
+        fetchCustomersData();
     };
 
     const handleCustomerClick = (customer) => {
         navigate(`/customer-details/${customer.id}`, { state: customer });
     };
 
+    const handleSelectCustomer = (id) => {
+        setSelectedCustomerIds((prev) =>
+            prev.includes(id) ? prev.filter((customerId) => customerId !== id) : [...prev, id]
+        );
+    };
+
+    // Select/Deselect all customers
+    const handleSelectAll = (event) => {
+        if (event.target.checked) {
+            const allCustomerIds = customers.map((customer) => customer.id);
+            setSelectedCustomerIds(allCustomerIds);
+        } else {
+            setSelectedCustomerIds([]);
+        }
+    };
+
+    // Delete multiple customers
+    const handleDeleteSelected = () => {
+        if (selectedCustomerIds.length === 0) return;
+        dispatch(deleteCustomers(selectedCustomerIds, dealeruId)).then(() => {
+            setSelectedCustomerIds([]);
+            dispatch(fetchCustomers(page, searchQuery)); // Refresh list after deletion
+        });
+    };
+
+    // Delete individual customer
+    const handleDeleteCustomer = (id) => {
+        dispatch(deleteCustomers([id], dealeruId)).then(() => {
+            dispatch(fetchCustomers(page, searchQuery)); // Refresh list after deletion
+        });
+    };
+
     return (
         <Box sx={{ width: '100%', p: 3, minHeight: '100vh' }}>
             <Paper sx={{ width: '100%', mb: 2, p: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                {/* Search Field and Button */}
+                <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
+                    <TextField
+                        label="Search Customers"
+                        variant="outlined"
+                        value={inputValue}
+                        onChange={handleInputChange}
+                        onKeyPress={handleKeyPress}
+                        sx={{ flexGrow: 1 }}
+                    />
                     <Button
                         variant="contained"
                         color="primary"
-                        onClick={() => navigate('/add-customer')}
+                        onClick={handleSearchClick}
+                        disabled={!inputValue.trim()}
                         sx={{
                             bgcolor: colors.primary,
                             '&:hover': { bgcolor: colors.secondary }
                         }}
                     >
-                        Create New Customer
+                        Search
                     </Button>
-                </Box>
-
-                <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-                    {role === 'admin' && (
-                        <FormControl sx={{ minWidth: 200 }}>
-                            <InputLabel>Select Dealer</InputLabel>
-                            <Select
-                                value={selectedDealer || ''}
-                                onChange={handleDealerChange}
-                                label="Select Dealer"
-                                disabled={isLoading}
-                            >
-                                {allDealers?.map((dealer) => (
-                                    <MenuItem key={dealer.uid} value={dealer.uid}>
-                                        {dealer.dealerName || dealer.email}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
+                    {isSearchMode && (
+                        <Button
+                            variant="outlined"
+                            onClick={handleResetSearch}
+                        >
+                            Clear Search
+                        </Button>
                     )}
-                    <TextField
-                        label="Search Customers"
-                        variant="outlined"
-                        value={searchQuery}
-                        onChange={handleSearchChange}
-                        sx={{ flexGrow: 1 }}
-                        InputProps={{
-                            endAdornment: <Search />,
-                        }}
-                    />
-                </Box>
+                </Box>                <Toolbar sx={{ justifyContent: 'space-between', mb: 2 }}>
+                    <Typography variant="h6">
+                        {searchQuery !== '' ? 'Search Results' : 'All Customers'}: {totalCustomers}
+                    </Typography>
+                    {selectedCustomerIds.length > 0 && (
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            startIcon={<DeleteIcon />}
+                            onClick={handleDeleteSelected}
+                        >
+                            Delete Selected ({selectedCustomerIds.length})
+                        </Button>
+                    )}
+                </Toolbar>
 
+                {/* Customer Table */}
                 <TableContainer>
                     <Table>
                         <TableHead>
                             <TableRow sx={{ backgroundColor: colors.primary }}>
-                                <TableCell sx={{ color: 'white' }}>#</TableCell>
-                                <TableCell sx={{ color: 'white' }}>Customer ID</TableCell>
-                                <TableCell sx={{ color: 'white' }}>Full Name</TableCell>
-                                <TableCell sx={{ color: 'white' }}>Phone Number</TableCell>
-                                <TableCell sx={{ color: 'white' }}>Address</TableCell>
-                                <TableCell sx={{ color: 'white' }}>Package</TableCell>
-                                <TableCell sx={{ color: 'white' }}>CNIC</TableCell>
+                                <TableCell padding="checkbox">
+                                    <Checkbox
+                                        indeterminate={
+                                            Array.isArray(customers) &&
+                                            selectedCustomerIds.length > 0 &&
+                                            selectedCustomerIds.length < customers.length
+                                        }
+                                        checked={
+                                            Array.isArray(customers) &&
+                                            customers.length > 0 &&
+                                            selectedCustomerIds.length === customers.length
+                                        }
+                                        onChange={handleSelectAll}
+                                    />
+                                </TableCell>
+                                        
+                                <TableCell sx={{ color: "white" }}>#</TableCell>
+                                <TableCell sx={{ color: "white" }}>Customer ID</TableCell>
+                                <TableCell sx={{ color: "white" }}>Full Name</TableCell>
+                                <TableCell sx={{ color: "white" }}>Phone</TableCell>
+                                <TableCell sx={{ color: "white" }}>CNIC</TableCell>
+                                <TableCell sx={{ color: "white" }}>Address</TableCell>
+                                <TableCell sx={{ color: "white" }}>Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {isLoading ? (
+                            {Array.isArray(customers) && customers.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} align="center">
-                                        <CircularProgress />
-                                    </TableCell>
-                                </TableRow>
-                            ) : customers.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} align="center">
+                                    <TableCell colSpan={6} align="center">
                                         No customers found
                                     </TableCell>
                                 </TableRow>
@@ -225,17 +233,37 @@ function Customers() {
                                     <TableRow
                                         key={customer.id}
                                         hover
-                                        onClick={() => handleCustomerClick(customer)}
                                         sx={{ cursor: 'pointer' }}
                                     >
-                                        <TableCell>{((page - 1) * 10) + index + 1}</TableCell>
+                                        <TableCell padding="checkbox">
+                                            <Checkbox
+                                                checked={selectedCustomerIds.includes(customer.id)}
+                                                onChange={() => handleSelectCustomer(customer.id)}
+                                            />
+                                        </TableCell>
+                                        <TableCell>{index + 1}</TableCell>
                                         <TableCell>{customer.userName}</TableCell>
-                                        <TableCell>{customer.fullName} {customer.lastName}</TableCell>
+                                        <TableCell>{customer.fullName}</TableCell>
                                         <TableCell>{customer.phone}</TableCell>
+                                        <TableCell>{customer.cnic}</TableCell>
                                         <TableCell>{customer.address}</TableCell>
-                                        <TableCell>{customer.package}</TableCell>
-                                        <TableCell>{customer.CNIC}</TableCell>
-
+                                        <TableCell align="right">
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handleCustomerClick(customer)}
+                                                sx={{ color: colors.primary }}
+                                            >
+                                                <VisibilityIcon />
+                                            </IconButton>
+                                        </TableCell>
+                                        {/* <TableCell>
+                                            <IconButton
+                                                color="error"
+                                                onClick={() => handleDeleteCustomer(customer.id)}
+                                            >
+                                                <DeleteIcon />
+                                            </IconButton>
+                                        </TableCell> */}
                                     </TableRow>
                                 ))
                             )}
@@ -243,10 +271,12 @@ function Customers() {
                     </Table>
                 </TableContainer>
 
+
+                {/* Pagination */}
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                     <Pagination
                         count={totalPages}
-                        page={currentPage}
+                        page={page}
                         onChange={handlePageChange}
                         color="primary"
                     />

@@ -2,53 +2,48 @@
 import { ref, update, get, push, set } from 'firebase/database';
 import { db } from '../../firebase';
 
-export const createInvoice = (invoiceData) => {
+export const createInvoice = (invoiceData, uid) => {
     return async (dispatch) => {
         try {
-            const { dealerId, customerId } = invoiceData;
+            const { dealerId, amount, customerId, date } = invoiceData;
 
-            if (!dealerId) {
-                console.error('No dealer ID found');
+            if (!dealerId || !uid) {
+                console.error('No dealer ID or UID found');
                 return;
             }
 
-            // Parse the date string to get year and month
-            const invoiceDate = new Date(invoiceData.date);
-            const year = invoiceDate.getFullYear();
-            const month = String(invoiceDate.getMonth() + 1).padStart(2, '0');
+            // Parse the date string to get year, month, and day
+            const invoiceDate = new Date(date);
+            const formattedDate = invoiceDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
 
-            // Generate invoice number
-            const timestamp = Date.now();
-            const invoiceNo = `INV-${year}${month}-${String(timestamp).slice(-3)}`;
-
+            const randomString = Math.random().toString(36).substring(2, 10); // Random alphanumeric string
+            const timestamp = Date.now(); // Current timestamp
+            const invoiceId = `INV-${formattedDate.replace(/-/g, '')}-${timestamp}-${randomString}`;
             // Create invoice path
-            const invoicePath = `invoices/${dealerId}/${year}/${month}/${customerId}`;
+            const invoicePath = `Invoices/${dealerId}/invoices/${formattedDate}/${invoiceId}`;
             console.log('Saving invoice to path:', invoicePath);
 
-            // Create invoice reference
-            const invoiceRef = ref(db, invoicePath);
-
-            // Add additional fields
+            // Prepare enhanced invoice data
             const enhancedInvoiceData = {
                 ...invoiceData,
-                invoiceNo,
-                amount: parseFloat(invoiceData.amount),
+                invoiceId,
+                amount: parseFloat(amount),
                 createdAt: new Date().toISOString(),
                 status: 'paid',
-                year,
-                month
+                staffId: uid
             };
 
-            // Save invoice
+            // Create invoice reference and save to Firebase
+            const invoiceRef = ref(db, invoicePath);
             await set(invoiceRef, enhancedInvoiceData);
 
-            // Update customer's payment history
+            // Update customer's payment history if customerId exists
             if (customerId) {
-                const customerHistoryPath = `customerInvoiceHistory/${customerId}/monthlyInvoices/${year}/${month}`;
+                const customerHistoryPath = `customerInvoiceHistory/${customerId}/${invoiceId}`;
                 console.log('Updating customer history at:', customerHistoryPath);
-                
-                const historyRef = ref(db, customerHistoryPath);
-                await set(historyRef, enhancedInvoiceData);
+
+                const customerRef = ref(db, customerHistoryPath);
+                await set(customerRef, enhancedInvoiceData);
             }
 
             // Dispatch success action
@@ -56,7 +51,6 @@ export const createInvoice = (invoiceData) => {
                 type: 'CREATE_INVOICE_SUCCESS',
                 payload: enhancedInvoiceData
             });
-
         } catch (error) {
             console.error('Error creating invoice:', error);
             dispatch({
@@ -66,6 +60,7 @@ export const createInvoice = (invoiceData) => {
         }
     };
 };
+
 
 export const fetchInvoiceDetails = (invoiceId) => async (dispatch) => {
     try {
@@ -86,59 +81,22 @@ export const fetchInvoiceDetails = (invoiceId) => async (dispatch) => {
 
 export const fetchInvoicesByCustomerUid = (customerUid) => async (dispatch) => {
     try {
-        const invoicesRef = ref(db, `customerInvoiceHistory/${customerUid}/monthlyInvoices`);
+        const invoicesRef = ref(db, `customerInvoiceHistory/${customerUid}`);
         const snapshot = await get(invoicesRef);
-        console.log('Initial snapshot:', snapshot.val());
+        console.log('Initial snapshot:', customerUid, snapshot.val());
 
         if (snapshot.exists()) {
-            const invoicesPromises = [];
+            const invoicesData = snapshot.val();
 
-            // Collect all invoice references
-            snapshot.forEach((yearSnapshot) => {
-                const year = yearSnapshot.key;
-                yearSnapshot.forEach((monthSnapshot) => {
-                    const month = monthSnapshot.key;
-                    const invoiceData = monthSnapshot.val();
-                    console.log('Invoice reference data:', invoiceData);
-
-                    // Get the full invoice details from invoices path
-                    const invoiceRef = ref(db, `invoices/${invoiceData.dealerId}/${year}/${month}/${customerUid}`);
-                    console.log('Fetching from path:', `invoices/${invoiceData.dealerId}/${year}/${month}/${customerUid}`);
-
-                    invoicesPromises.push(
-                        get(invoiceRef).then(invoiceSnap => {
-                            if (!invoiceSnap.exists()) return null;
-                            const data = invoiceSnap.val();
-                            console.log('Fetched invoice data:', data);
-                            return {
-                                id: data.invoiceId || `${year}${month}-${customerUid}`,
-                                invoiceNo: data.invoiceNo || `INV-${year}${month}-${customerUid.slice(-4)}`,
-                                customerName: data.customerName,
-                                ispName: data.ispName,
-                                amount: data.amount,
-                                createdAt: data.createdAt,
-                                status: data.status || 'paid',
-                                year,
-                                month
-                            };
-                        })
-                    );
-                });
-            });
-
-            // Wait for all invoice details to be fetched
-            const invoicesData = await Promise.all(invoicesPromises);
-            console.log('Final invoices data:', invoicesData);
-
-            const validInvoices = invoicesData.filter(invoice => invoice !== null);
-            console.log('Valid invoices:', validInvoices);
-
-            // Sort invoices by date, most recent first
-            validInvoices.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
+            // Structure the invoices into an array
+            const invoicesList = Object.keys(invoicesData).map((invoiceId) => ({
+                id: invoiceId,
+                ...invoicesData[invoiceId],
+            }));
+            console.log('Invoices list:', invoicesList);
             dispatch({
                 type: 'FETCH_INVOICES_SUCCESS',
-                payload: validInvoices
+                payload: invoicesList
             });
         } else {
             dispatch({
@@ -187,13 +145,13 @@ export const fetchInvoicesByDateRange = (startDate, endDate, paymentStatus = 'pa
             for (let month = monthStart; month <= monthEnd; month++) {
                 const monthRef = ref(db, `invoices/${dealerId}/${year}/${month}`);
                 console.log('Fetching from path:', `invoices/${dealerId}/${year}/${month}`);
-                
+
                 const monthSnapshot = await get(monthRef);
-                
+
                 if (monthSnapshot.exists()) {
                     const monthData = monthSnapshot.val();
                     console.log('Month data:', monthData);
-                    
+
                     // Convert object to array if it's an object
                     const monthInvoices = Object.values(monthData);
                     allInvoices = [...allInvoices, ...monthInvoices];

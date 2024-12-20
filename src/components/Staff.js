@@ -70,6 +70,7 @@ const StaffList = () => {
                 if (role === 'admin') {
                     await dispatch(fetchStaffByDealerId(selectedDealer));
                 } else {
+                    console.log('Fetching staff for current user');
                     await dispatch(fetchStaff());
                 }
             } catch (error) {
@@ -157,7 +158,7 @@ const StaffList = () => {
                                         fontSize: '2.5rem'
                                     }}
                                 >
-                                        {staffMember.firstName ? staffMember.firstName.charAt(0).toUpperCase() : 'I'}
+                                        {staffMember.name ? staffMember.name.charAt(0).toUpperCase() : 'I'}
 
                                     </Avatar>
                                     <Typography variant="h5" sx={{ mb: 1 }}>

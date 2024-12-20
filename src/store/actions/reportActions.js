@@ -1,6 +1,125 @@
 // actions/reportActions.js
-import { ref, get } from 'firebase/database';
+import { getDatabase, ref, query, orderByChild, orderByKey, startAt, endAt, get } from 'firebase/database';
 import { db } from '../../firebase';
+
+export const fetchTodayInvoicesByStaff = (dealerId, staffId) => {
+  return async (dispatch) => {
+    dispatch({ type: 'FETCH_TODAY_INVOICES_REQUEST' });
+    console.log(dealerId, staffId, 'staff');
+    try {
+      // Get today's date in YYYY-MM-DD format
+      const today = new Date();
+      const formattedDate = today.toISOString().split('T')[0];
+      
+      const invoicesPath = `Invoices/${dealerId}/invoices/${formattedDate}`;
+      const invoicesRef = ref(db, invoicesPath);
+      
+      const snapshot = await get(invoicesRef);
+      console.log('Today\'s invoices snapshot:', snapshot.val());
+      
+      if (snapshot.exists()) {
+        const todayInvoices = snapshot.val();
+        const invoicesList = [];
+
+        // Convert invoices object to array and filter by staffId
+        Object.keys(todayInvoices).forEach((invoiceId) => {
+          const invoice = {
+            id: invoiceId,
+            ...todayInvoices[invoiceId],
+          };
+          // Only add invoices that match the staffId (if provided)
+          if (!staffId || invoice.staffId === staffId) {
+            console.log(invoice.staffId === staffId, 'invoice');
+            invoicesList.push(invoice);
+          }
+        });
+      
+        dispatch({
+          type: 'FETCH_TODAY_INVOICES_SUCCESS',
+          payload: invoicesList,
+        });
+      } else {
+        dispatch({
+          type: 'FETCH_TODAY_INVOICES_EMPTY',
+          payload: [],
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching today\'s invoices:', error);
+      dispatch({
+        type: 'FETCH_TODAY_INVOICES_ERROR',
+        payload: error.message,
+      });
+    }
+  };
+};
+
+export const fetchInvoicesByDateRanges = (none, startDate, endDate, menuItem) => {
+  return async (dispatch, getState) => {
+    dispatch({ type: 'FETCH_INVOICES_REQUEST' });
+    const uid = getState().auth.user.role === 'staff' ? getState().auth.user.uid : getState().auth.user.dealerId;
+    const dealerId = getState().auth.user.role === 'dealer' ? getState().auth.user.uid : getState().auth.user.dealerId;
+    console.log(uid, 'uid');
+    console.log(dealerId, 'dealerId');
+    try {
+      const invoicesPath = `Invoices/${dealerId}/invoices`;
+      const invoicesRef = ref(db, invoicesPath);
+      
+      const invoicesQuery = query(
+        invoicesRef,
+        orderByKey(),
+        startAt(startDate),
+        endAt(endDate)
+      );
+
+      const snapshot = await get(invoicesQuery);
+      console.log('Invoices snapshot:', snapshot.val());
+      
+      if (snapshot.exists()) {
+        const allInvoicesByDate = snapshot.val();
+        let invoicesList = [];
+
+        Object.keys(allInvoicesByDate).forEach((dateKey) => {
+          const invoicesForDate = allInvoicesByDate[dateKey];
+          Object.keys(invoicesForDate).forEach((invoiceId) => {
+            invoicesList.push({
+              id: invoiceId,
+              ...invoicesForDate[invoiceId],
+            });
+          });
+        });
+        console.log('Invoices list:', uid, dealerId, menuItem);
+
+        // Filter based on menuItem
+        if (menuItem === 'onlydealer') {
+          console.log('Filtered to only dealers:', invoicesList);
+          invoicesList = invoicesList.filter(invoice => invoice.staffId === dealerId);
+          // Show all dealer invoices (no additional filtering needed)
+        } else if (menuItem !== 'all') {
+          // Filter by staffId if a specific staff is selected
+          invoicesList = invoicesList.filter(invoice => invoice.staffId === menuItem);
+        }
+        // If menuItem === 'all', show all invoices (no filtering needed)
+
+        dispatch({
+          type: 'FETCH_INVOICES_SUCCESS',
+          payload: invoicesList,
+        });
+      } else {
+        dispatch({
+          type: 'FETCH_INVOICES_EMPTY',
+          payload: [],
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
+      dispatch({
+        type: 'FETCH_INVOICES_ERROR',
+        payload: error.message,
+      });
+    }
+  };
+};
 
 export const fetchPaidCustomers = (year, month, dealerId) => async (dispatch) => {
     try {
@@ -20,7 +139,7 @@ export const fetchPaidCustomers = (year, month, dealerId) => async (dispatch) =>
       dispatch({ type: 'FETCH_PAID_CUSTOMERS_ERROR', error });
     }
 };
-
+ 
 export const fetchInvoicesByDateRange = (startDate, endDate, paymentStatus = 'paid') => async (dispatch, getState) => {
   try {
     dispatch({ type: 'FETCH_REPORT_START' });

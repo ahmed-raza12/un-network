@@ -1,5 +1,5 @@
 import { db } from '../../firebase'; // Import Realtime Database
-import { ref, set, get, child, push, query, orderByChild, orderByKey, startAfter, limitToFirst, equalTo } from 'firebase/database'; // Import Realtime Database methods
+import { ref, set, get, child, push, query, startAt, orderByChild, orderByKey, startAfter, limitToFirst, equalTo } from 'firebase/database'; // Import Realtime Database methods
 import { getAuth } from "firebase/auth"; // Import Firebase Auth
 
 // Action Types
@@ -17,8 +17,8 @@ const ITEMS_PER_PAGE = 10;
 
 // Helper function to get paginated data
 export const getPaginatedData = (allCustomers = [], page, searchQuery = '') => {
-    let filteredCustomers = allCustomers;
-    
+    let filteredCustomers = allCustomers.data;
+    console.log('filteredCustomers:', filteredCustomers);
     // Apply search if query exists
     if (searchQuery) {
         const searchLower = searchQuery.toLowerCase();
@@ -44,32 +44,167 @@ export const getPaginatedData = (allCustomers = [], page, searchQuery = '') => {
     };
 };
 
-export const fetchCustomers = (page = 1, searchQuery = '') => async (dispatch, getState) => {
+export const searchCustomers = (searchQuery, dealerId) => async (dispatch) => {
     try {
-        const dealerId = getState().auth.user.role === 'staff' ? getState().auth.user.dealerId : getState().auth.user.uid;
-        
-        // Try to get customers from localStorage first
-        let allCustomers = JSON.parse(localStorage.getItem(`customers_${dealerId}`));
-        
-        // If not in localStorage, fetch from database
-        if (!allCustomers) {
-            const customersRef = query(ref(db, `customers/${dealerId}`), orderByKey());
-            const snapshot = await get(customersRef);
-            allCustomers = snapshot.exists() 
-                ? Object.entries(snapshot.val()).map(([id, data]) => ({ id, ...data }))
-                : [];
-            
-            // Store in localStorage
-            localStorage.setItem(`customers_${dealerId}`, JSON.stringify(allCustomers));
+        // Reference to customers for this dealer
+        const customersRef = ref(db, `customers/${dealerId}`);
+        // Create search queries for different fields
+        const searchQueries = [
+            query(customersRef, orderByChild('userName'), equalTo(searchQuery)),
+            // query(customersRef, orderByChild('fullName'), equalTo(searchQuery))
+        ];
+        console.log(searchQueries, searchQuery, 'searchQueries');
+
+        // Combine results from multiple search queries
+        let customers = [];
+        for (let searchQuery of searchQueries) {
+            const snapshot = await get(searchQuery);
+            console.log(snapshot.val());
+            if (snapshot.exists()) {
+                const newCustomers = Object.entries(snapshot.val()).map(([id, data]) => ({
+                    id,
+                    ...data
+                }));
+                
+                // Combine without duplicates
+                customers = [...new Set([...customers, ...newCustomers])];
+            }
         }
 
-        // Get paginated data
-        const paginatedData = getPaginatedData(allCustomers, page, searchQuery);
+        // Dispatch action with search results
+        dispatch({
+            type: 'SEARCH_CUSTOMERS_SUCCESS',
+            payload: {
+                customers,
+                totalCustomers: customers.length,
+                totalPages: 1,
+                currentPage: 1
+            }
+        });
+
+    } catch (error) {
+        console.error("Error searching customers: ", error);
+        dispatch({
+            type: 'FETCH_CUSTOMERS_FAILURE',
+            payload: error.message,
+        });
+    }
+};
+
+export const deleteCustomers = (customerIds, dealerId) => async (dispatch) => {
+    console.log('Deleting customers:', customerIds);
+    try {
+        for (let customerId of customerIds) {
+            const customerRef = ref(db, `customers/${dealerId}/${customerId}`);
+            await set(customerRef, null);
+        }
+
+        dispatch({
+            type: 'DELETE_CUSTOMERS_SUCCESS',
+            payload: customerIds,
+        });
+
+    } catch (error) {
+        console.error("Error deleting customers: ", error);
+        dispatch({
+            type: 'DELETE_CUSTOMERS_FAILURE',
+            payload: error.message,
+        });
+    }
+};
+
+
+export const fetchCustomers = (page, searchQuery = '') => async (dispatch, getState) => {
+    try {
+        const dealerId = getState().auth.user.role === 'staff' 
+            ? getState().auth.user.dealerId 
+            : getState().auth.user.uid;
+        
+        const PAGE_SIZE = 20;
+        const customersRef = ref(db, `customers/${dealerId}`);
+
+        // Get total count first
+        const countSnapshot = await get(customersRef);
+        const totalCustomers = countSnapshot.exists() ? Object.keys(countSnapshot.val()).length : 0;
+        const totalPages = Math.ceil(totalCustomers / PAGE_SIZE);
+
+        // Initialize query
+        let customerQuery;
+        
+        if (page === 1) {
+            // First page query
+            customerQuery = query(
+                customersRef,
+                orderByChild('userName'),
+                limitToFirst(PAGE_SIZE)
+            );
+        } else {
+            // Get the last item from the previous page
+            const previousPageQuery = query(
+                customersRef,
+                orderByChild('userName'),
+                limitToFirst((page - 1) * PAGE_SIZE)
+            );
+            const previousPageSnapshot = await get(previousPageQuery);
+            
+            if (previousPageSnapshot.exists()) {
+                const previousPageData = Object.values(previousPageSnapshot.val());
+                const lastItem = previousPageData[previousPageData.length - 1];
+                
+                // Query starting after the last item from previous page
+                customerQuery = query(
+                    customersRef,
+                    orderByChild('userName'),
+                    startAfter(lastItem.userName),
+                    limitToFirst(PAGE_SIZE)
+                );
+            } else {
+                // If previous page doesn't exist, return empty results
+                dispatch({
+                    type: FETCH_CUSTOMERS_SUCCESS,
+                    payload: {
+                        customers: [],
+                        currentPage: page,
+                        totalPages,
+                        totalCustomers
+                    }
+                });
+                return;
+            }
+        }
+
+        // Fetch the customers for current page
+        const snapshot = await get(customerQuery);
+        let customers = [];
+        
+        if (snapshot.exists()) {
+            customers = Object.entries(snapshot.val()).map(([id, data]) => ({
+                id,
+                ...data
+            }));
+        }
+
+        // Handle search filtering
+        let filteredCustomers = customers;
+        if (searchQuery) {
+            const lowercaseQuery = searchQuery.toLowerCase();
+            filteredCustomers = customers.filter(customer => 
+                customer.fullName?.toLowerCase().includes(lowercaseQuery) ||
+                customer.phone?.includes(lowercaseQuery) ||
+                customer.userName?.toLowerCase().includes(lowercaseQuery)
+            );
+        }
 
         dispatch({
             type: FETCH_CUSTOMERS_SUCCESS,
-            payload: paginatedData
+            payload: {
+                customers: filteredCustomers,
+                currentPage: page,
+                totalPages,
+                totalCustomers: searchQuery ? filteredCustomers.length : totalCustomers
+            }
         });
+
     } catch (error) {
         console.error("Error fetching customers: ", error);
         dispatch({
@@ -78,7 +213,6 @@ export const fetchCustomers = (page = 1, searchQuery = '') => async (dispatch, g
         });
     }
 };
-
 export const fetchCustomersByDealerId = (dealerId, page = 1, searchQuery = '') => async dispatch => {
     dispatch({ type: FETCH_CUSTOMERS_REQUEST });
     try {
