@@ -92,7 +92,9 @@ const StaffList = () => {
 
     return (
         <Box sx={{ width: '100%', p: 3, minHeight: '100vh' }}>
-            <Paper sx={{ width: '100%', mb: 2, p: 2 }}>
+            <Paper sx={{
+                width: '100%', mb: 2, p: 2, backgroundColor: "#fff", boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)'
+            }}>
                 {role === 'admin' && (
                     <FormControl sx={{ minWidth: 200, mb: 2 }}>
                         <InputLabel>Select Dealer</InputLabel>

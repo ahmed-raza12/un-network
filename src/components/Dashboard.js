@@ -8,6 +8,11 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import QueueIcon from '@mui/icons-material/Queue';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import Receipt from '@mui/icons-material/Receipt';
+import TableChart from '@mui/icons-material/TableChart';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import AddCircle from '@mui/icons-material/AddCircle';
+import CellTower from '@mui/icons-material/CellTower';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/actions/authActions';
@@ -36,14 +41,12 @@ function Dashboard() {
             <Grid container spacing={2} mt={2}>
                 {[
                     
-                    { label: 'Connections', icon: <PeopleIcon fontSize="medium" />, route: '/customers' },
-                    { label: 'Dealers', icon: <BusinessIcon fontSize="large" />, route: '/dealers' },
+                    { label: 'Customers', icon: <PeopleIcon fontSize="large" />, route: '/customers' },
                     { label: 'Staff', icon: <Groups2 fontSize="large" />, route: '/staff' },
-                    { label: 'Reports', icon: <ReportIcon fontSize="large" />, route: '/reports' },
-                    { label: 'Connections', icon: <PeopleIcon fontSize="medium" />, route: '/customers' },
-                    { label: 'Dealers', icon: <BusinessIcon fontSize="large" />, route: '/dealers' },
-                    { label: 'Staff', icon: <Groups2 fontSize="large" />, route: '/staff' },
-                    { label: 'Reports', icon: <ReportIcon fontSize="large" />, route: '/reports' },
+                    { label: 'Reports', icon: <TableChart fontSize="large" />, route: '/reports' },
+                    { label: 'Slips', icon: <AddCircle fontSize="large" />, route: '/slips' },
+                    { label: 'Quick Slip', icon: <Receipt fontSize="large" />, route: '/manual-slip' },
+                    { label: 'ISP', icon: <CellTower fontSize="large" />, route: '/isp' },
                 ].map((card, index) => (
                     <Grid item xs={12} sm={6} md={3} key={index}>
                         <Link to={card.route} style={{ textDecoration: 'none' }}>

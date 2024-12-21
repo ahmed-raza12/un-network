@@ -275,7 +275,7 @@ function Report() {
             <TableBody>
               {Array.isArray(invoices) && invoices.map((invoice) => (
                 <TableRow key={invoice?.id || invoice?.customerId || Math.random()}>
-                  <TableCell>{invoice?.invoiceNo || 'N/A'}</TableCell>
+                  <TableCell>{invoice?.invoiceNumber || 'N/A'}</TableCell>
                   <TableCell>{invoice?.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : 'N/A'}</TableCell>
                   <TableCell>{invoice?.customerName || 'N/A'}</TableCell>
                   <TableCell>{invoice?.ispName || 'N/A'}</TableCell>

@@ -3,8 +3,10 @@ import { ref, update, get, push, set } from 'firebase/database';
 import { db } from '../../firebase';
 
 export const createInvoice = (invoiceData, uid) => {
-    return async (dispatch) => {
+    return async (dispatch, getState) => {
         try {
+            // const userId = getState().auth.user.role === 'staff' ? getState().auth.user.uid : getState().auth.user.dealerId;
+            console.log('Creating invoice for user:', uid);
             const { dealerId, amount, customerId, date } = invoiceData;
 
             if (!dealerId || !uid) {
@@ -15,10 +17,25 @@ export const createInvoice = (invoiceData, uid) => {
             // Parse the date string to get year, month, and day
             const invoiceDate = new Date(date);
             const formattedDate = invoiceDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+            const year = invoiceDate.getFullYear();
 
-            const randomString = Math.random().toString(36).substring(2, 10); // Random alphanumeric string
-            const timestamp = Date.now(); // Current timestamp
+            // Get current invoice number for this user
+            const userInvoiceCountRef = ref(db, `userInvoiceCounts/${uid}/${year}`);
+            const countSnapshot = await get(userInvoiceCountRef);
+            let currentNumber = 0;
+
+            if (countSnapshot.exists()) {
+                currentNumber = countSnapshot.val();
+            }
+
+            // Increment the counter
+            const newNumber = currentNumber + 1;
+
+            // Create invoice ID with timestamp and random string for uniqueness
+            const timestamp = Date.now();
+            const randomString = Math.random().toString(36).substring(2, 10);
             const invoiceId = `INV-${formattedDate.replace(/-/g, '')}-${timestamp}-${randomString}`;
+
             // Create invoice path
             const invoicePath = `Invoices/${dealerId}/invoices/${formattedDate}/${invoiceId}`;
             console.log('Saving invoice to path:', invoicePath);
@@ -27,40 +44,56 @@ export const createInvoice = (invoiceData, uid) => {
             const enhancedInvoiceData = {
                 ...invoiceData,
                 invoiceId,
+                invoiceNumber: newNumber.toString().padStart(4, '0'), // Format number as 0001, 0002, etc.
                 amount: parseFloat(amount),
                 createdAt: new Date().toISOString(),
                 status: 'paid',
-                staffId: uid
+                staffId: uid,
             };
 
-            // Create invoice reference and save to Firebase
-            const invoiceRef = ref(db, invoicePath);
-            await set(invoiceRef, enhancedInvoiceData);
+            // Create batch operations for atomic updates
+            const batch = {};
+
+            // Save the invoice
+            batch[invoicePath] = enhancedInvoiceData;
+
+            // Update the counter
+            batch[`userInvoiceCounts/${uid}/${year}`] = newNumber;
 
             // Update customer's payment history if customerId exists
             if (customerId) {
                 const customerHistoryPath = `customerInvoiceHistory/${customerId}/${invoiceId}`;
-                console.log('Updating customer history at:', customerHistoryPath);
-
-                const customerRef = ref(db, customerHistoryPath);
-                await set(customerRef, enhancedInvoiceData);
+                batch[customerHistoryPath] = enhancedInvoiceData;
             }
+
+            // Save latest invoice reference for quick lookup
+            batch[`latestUserInvoices/${uid}`] = {
+                invoiceId,
+                invoiceNumber: newNumber.toString().padStart(4, '0'),
+                createdAt: enhancedInvoiceData.createdAt
+            };
+
+            // Execute all updates atomically
+            await update(ref(db), batch);
 
             // Dispatch success action
             dispatch({
                 type: 'CREATE_INVOICE_SUCCESS',
                 payload: enhancedInvoiceData
             });
+
+            return enhancedInvoiceData;
+
         } catch (error) {
             console.error('Error creating invoice:', error);
             dispatch({
                 type: 'CREATE_INVOICE_ERROR',
                 payload: error.message
             });
+            throw error;
         }
     };
 };
-
 
 export const fetchInvoiceDetails = (invoiceId) => async (dispatch) => {
     try {

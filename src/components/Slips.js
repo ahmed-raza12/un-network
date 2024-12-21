@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Box, Typography, Divider, Grid, Paper, Button, TextField, Select, MenuItem, FormControl, InputLabel, CircularProgress } from '@mui/material';
 import { green } from '@mui/material/colors';
 import { useReactToPrint } from 'react-to-print';
@@ -24,9 +24,10 @@ const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
                 <Typography variant="h6" fontWeight="bold" color="#6b49e4">
                     Payment Bill
                 </Typography>
-                {/* <Typography variant="subtitle1" color="textPrimary">
-                    Receipt #{receiptData.invoiceNo}
-                </Typography> */}
+                <Typography variant="subtitle1" color="textPrimary">
+                    Invoice #{receiptData.invoiceNumber}
+                </Typography>
+
                 <Box sx={{
                     backgroundColor: green[100],
                     padding: '4px 12px',
@@ -108,11 +109,9 @@ const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
 ));
 
 const Slips = () => {
-    const [invoiceNo, setInvoiceNo] = useState('001');
     const [date, setDate] = useState(new Date().toLocaleString('default', { month: 'short', day: 'numeric', year: 'numeric' }));
     const [userName, setUserName] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    // const [chargedBy, setChargedBy] = useState('');
     const [customerId, setCustomerId] = useState('');
     const [customerName, setCustomerName] = useState('');
     const [ispName, setIspName] = useState('');
@@ -125,12 +124,38 @@ const Slips = () => {
     const dispatch = useDispatch();
     const dealerId = useSelector((state) => state.auth.user.uid);
     const userId = useSelector((state) => state.auth.user.uid);
+    const [currentInvoiceNumber, setCurrentInvoiceNumber] = useState(null);
     const staffDealerId = useSelector((state) => state.auth.user.dealerId);
     const role = useSelector((state) => state.auth.user.role);
     const componentRef = useRef();
     const handlePrint = useReactToPrint({
         content: () => componentRef.current,
     });
+
+
+    const fetchLatestInvoiceNumber = async () => {
+        const targetDealerId = role === 'staff' ? userId : staffDealerId;
+        const year = new Date().getFullYear();
+        
+        console.log('Fetching invoice number for year:', userId, year);
+        try {
+            const countRef = ref(db, `userInvoiceCounts/${userId}/${year}`);
+            const snapshot = await get(countRef);
+            console.log('Invoice number snapshot:', snapshot.val());
+            if (snapshot.exists()) {
+                setCurrentInvoiceNumber((snapshot.val() + 1).toString().padStart(4, '0'));
+            } else {
+                setCurrentInvoiceNumber('0001');
+            }
+        } catch (error) {
+            console.error('Error fetching invoice number:', error);
+            setCurrentInvoiceNumber('0001');
+        }
+    };
+
+    useEffect(() => {
+        fetchLatestInvoiceNumber();
+    }, [userId, dealerId, staffDealerId, role, currentInvoiceNumber]);
 
     // const fetchCustomerDetails = (id) => {
     //     console.log(dealerId, 'id');
@@ -256,7 +281,7 @@ const Slips = () => {
         const month = date.getMonth() + 1;
 
         const invoiceData = {
-            invoiceNo: `INV-${year}${month}-${customerId.slice(-4)}`,
+            invoiceNumber: currentInvoiceNumber,
             date,
             chargedBy,
             userName,
@@ -271,17 +296,20 @@ const Slips = () => {
             phone
         };
 
-        dispatch(createInvoice(invoiceData, userId));
+        dispatch(createInvoice(invoiceData, userId))
+        .then(() => fetchLatestInvoiceNumber())
         handlePrint();
 
-        setInvoiceNo(prev => {
-            const num = parseInt(prev) + 1;
-            return num.toString().padStart(3, '0');
-        });
+        setCustomerName('');
+        setIspName('');
+        setAddress('');
+        setPhone('');
+        setPkg('');
+        setCustomerId('');
     };
 
     const receiptData = {
-        invoiceNo,
+        invoiceNumber: currentInvoiceNumber,
         date,
         chargedBy,
         customerId,
@@ -304,6 +332,16 @@ const Slips = () => {
 
                 <form onSubmit={handleSubmit}>
                     <Grid container spacing={3}>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                label="Invoice Number"
+                                value={currentInvoiceNumber ? `#${currentInvoiceNumber}` : 'Loading...'}
+                                disabled
+                                fullWidth
+                                sx={{ mb: 2 }}
+                            />
+                        </Grid>
+
                         <Grid item xs={12} sm={12} md={9} lg={8}>
                             <TextField
                                 label="Customer username"
