@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { db } from '../firebase'; // Import Firestore
+import { db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { login } from '../store/actions/authActions'; // Import login action
+import { login } from '../store/actions/authActions';
 import {
   Container,
   TextField,
@@ -13,63 +13,71 @@ import {
   Grid,
   Box,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import { ref, get } from 'firebase/database';
 import bgImage from '../assets/bg_image.png';
 import loginLogo from '../assets/login_logo.png';
+import { TextFieldStyle } from '../stylings';
+import colors from '../colors';
+
+
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [companyCode, setCompanyCode] = useState(''); // New state for company code
+  const [companyCode, setCompanyCode] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false); // New state for loading
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const isAuthenticated = useSelector((state) => state.auth.isLoggedIn); // Get auth state from Redux
+  const isAuthenticated = useSelector((state) => state.auth.isLoggedIn);
 
   useEffect(() => {
-    // Check if user is already authenticated
     if (isAuthenticated) {
-      navigate('/'); // Redirect to dashboard if already authenticated
+      navigate('/'); // Redirect to dashboard if authenticated
     }
   }, [isAuthenticated, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     const auth = getAuth();
+    setLoading(true); // Start loading
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
       const user = userCredential.user;
-      const userId = user.uid; // Get the user's UID
+      const userId = user.uid;
 
       // Validate company code
-      const userRef = ref(db, `users/${userId}`); // Reference to the user's data in Realtime Database
-      const userSnapshot = await get(userRef); // Get the user data
-      console.log(userSnapshot.val(), userSnapshot.val().companyCode !== companyCode, companyCode, 'userSnapshot'); // Log the entire snapshot value
+      const userRef = ref(db, `users/${userId}`);
+      const userSnapshot = await get(userRef);
+
       if (!userSnapshot.exists() || userSnapshot.val().companyCode !== companyCode) {
         setError('Invalid company code');
+        setLoading(false);
         return;
       }
 
       if (userSnapshot.exists()) {
-        const userData = userSnapshot.val(); // Get the user data
-        const success = dispatch(login(userData)); // Dispatch login action
+        const userData = userSnapshot.val();
+        const success = dispatch(login(userData));
         if (success) {
-          navigate('/'); // Redirect to dashboard on successful login
+          navigate('/');
         }
       } else {
         setError('User data not found');
       }
     } catch (err) {
       console.error(err);
-      setError("Invalid email or password");
+      setError('Invalid email or password');
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
 
   return (
-    <Container 
-      component="main" 
+    <Container
+      component="main"
       maxWidth={false}
       style={{
         display: 'flex',
@@ -83,11 +91,10 @@ const Login = () => {
         backgroundRepeat: 'no-repeat',
       }}
     >
-     
-      <Paper 
-        elevation={3} 
-        style={{ 
-          padding: '20px', 
+      <Paper
+        elevation={3}
+        style={{
+          padding: '20px',
           width: '100%',
           maxWidth: '400px',
           boxSizing: 'border-box',
@@ -95,10 +102,10 @@ const Login = () => {
         }}
       >
         <Box display="flex" justifyContent="center" alignItems="center" mb={0}>
-          <img 
+          <img
             src={loginLogo}
             alt="Logo"
-            style={{ height: 'auto', maxWidth: '300px' }} // Responsive image
+            style={{ height: 'auto', maxWidth: '300px' }}
           />
         </Box>
         <form onSubmit={handleLogin}>
@@ -106,26 +113,33 @@ const Login = () => {
             <Grid item xs={12}>
               <TextField
                 error={error === 'Invalid email or password'}
-                // helperText={error === 'Invalid email or password' ? error : ''}
                 variant="outlined"
                 fullWidth
                 label="Email"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError('');
+                }}
+                type="email"
                 required
+                sx={TextFieldStyle}
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
                 error={error === 'Invalid email or password'}
-                // helperText={error === 'Invalid email or password' ? error : ''}
                 variant="outlined"
                 fullWidth
                 label="Password"
                 type="password"
                 value={password}
-                onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError('');
+                }}
                 required
+                sx={TextFieldStyle}
               />
             </Grid>
             <Grid item xs={12}>
@@ -137,7 +151,10 @@ const Login = () => {
                 type="number"
                 label="Company Code"
                 value={companyCode}
-                onChange={(e) => { setCompanyCode(Number(e.target.value)); setError(''); }}
+                onChange={(e) => {
+                  setCompanyCode(Number(e.target.value));
+                  setError('');
+                }}
                 required
               />
             </Grid>
@@ -145,15 +162,27 @@ const Login = () => {
               <Button
                 type="submit"
                 variant="contained"
-                color="primary"
+                sx={{
+                  background: colors.gradientBackground,
+                  '&:hover': { background: colors.gradientBackground },
+                  color: 'white',
+                  marginTop: 2,
+                  mb: 2,
+
+                }}
                 fullWidth
+                disabled={loading} // Disable button while loading
               >
-                Login
+                {loading ? <CircularProgress size={24} color="inherit" /> : 'Login'}
               </Button>
             </Grid>
           </Grid>
         </form>
-        {error && <Alert style={{ marginTop: 20, marginBottom: 20 }} severity="error">{error}</Alert>}
+        {error && (
+          <Alert style={{ marginTop: 20, marginBottom: 20 }} severity="error">
+            {error}
+          </Alert>
+        )}
       </Paper>
     </Container>
   );

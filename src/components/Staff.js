@@ -113,7 +113,8 @@ const StaffList = () => {
                     </FormControl>
                 )}
                 <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                    {staff.length < 10 && (
+                        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                         <Button
                             type="submit"
                             variant="contained"
@@ -126,6 +127,7 @@ const StaffList = () => {
                             {'Create Staff'}
                         </Button>
                     </Box>
+                    )}
                 </Grid>
                 {isLoading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>

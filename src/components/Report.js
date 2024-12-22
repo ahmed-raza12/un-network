@@ -118,7 +118,7 @@ function Report() {
 
       <Paper sx={{ padding: 3, marginBottom: 3 }} elevation={3}>
         <Grid container spacing={3} alignItems="center">
-          <Grid item xs={12} md={2}>
+          <Grid item xs={12} md={3}>
             <TextField
               fullWidth
               label="Start Date"
@@ -133,7 +133,7 @@ function Report() {
               }}
             />
           </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid item xs={12} md={3}>
             <TextField
               fullWidth
               label="End Date"
@@ -171,7 +171,7 @@ function Report() {
               ))}
             </TextField>
           </Grid> */}
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={4}>
             <TextField
               select
               fullWidth
@@ -234,7 +234,7 @@ function Report() {
         </Paper>
       )} */}
 
-      <Grid container spacing={2} mb={3} justifyContent="flex-end">
+      {/* <Grid container spacing={2} mb={3} justifyContent="flex-end">
         <Grid item>
           <Button
             variant="contained"
@@ -250,7 +250,7 @@ function Report() {
             {generating ? <CircularProgress size={24} /> : "Generate Test Data"}
           </Button>
         </Grid>
-      </Grid>
+      </Grid> */}
       {loading ? (
         <Box display="flex" justifyContent="center" p={3}>
           <CircularProgress />

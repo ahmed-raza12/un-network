@@ -58,7 +58,7 @@ import dealerReducer from '../store/reducers/dealerReducer';
 // Create a styled Tab component
 const StyledTab = styled(Tab)(({ theme }) => ({
     '&.Mui-selected': {
-        background: 'linear-gradient(90deg, #00A36C 0%, #2AAA8A 100%)',
+        background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`,
         color: 'white',
     },
 }));

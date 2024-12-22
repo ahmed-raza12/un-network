@@ -48,8 +48,8 @@ import { fetchTodayInvoicesByStaff } from '../store/actions/reportActions';
 
 
 const StyledTab = styled(Tab)(({ theme }) => ({
-    '&.Mui-selected': {
-        background: 'linear-gradient(90deg, #00A36C 0%, #2AAA8A 100%)',
+    '&.Mui-selected': { 
+        background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`,
         color: 'white',
     },
 }));

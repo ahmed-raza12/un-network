@@ -45,7 +45,7 @@ function Dashboard() {
                     { label: 'Staff', icon: <Groups2 fontSize="large" />, route: '/staff' },
                     { label: 'Reports', icon: <TableChart fontSize="large" />, route: '/reports' },
                     { label: 'Slips', icon: <AddCircle fontSize="large" />, route: '/slips' },
-                    { label: 'Quick Slip', icon: <Receipt fontSize="large" />, route: '/manual-slip' },
+                    { label: 'Manual Slip', icon: <Receipt fontSize="large" />, route: '/manual-slip' },
                     { label: 'ISP', icon: <CellTower fontSize="large" />, route: '/isp' },
                 ].map((card, index) => (
                     <Grid item xs={12} sm={6} md={3} key={index}>

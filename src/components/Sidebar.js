@@ -62,7 +62,7 @@ function SidebarLayout() {
     { text: 'ISP', icon: <CellTower fontSize="medium" />, path: '/isp', roles: ['admin', 'dealer'] },
     { text: 'Reports', icon: <TableChart fontSize="medium" />, path: '/reports', roles: ['admin', 'dealer', 'staff'] },
     { text: 'Slips', icon: <AddCircle fontSize="medium" />, path: '/slips', roles: ['admin', 'dealer', 'staff'] },
-    { text: 'Quick Slip', icon: <Receipt fontSize="medium" />, path: '/manual-slip', roles: ['admin', 'dealer'] },
+    { text: 'Manual Slip', icon: <Receipt fontSize="medium" />, path: '/manual-slip', roles: ['admin', 'dealer'] },
 
     // { text: 'Due Customers', icon: <ReportIcon fontSize="medium" />, path: '/due-customers', roles: ['admin', 'dealer', 'staff'] },
 
@@ -76,6 +76,7 @@ function SidebarLayout() {
     const currentPath = location.pathname;
     const activeIndex = filteredItems.findIndex(item =>
       item.path === currentPath ||
+      (item.path === '/dashboard' && (currentPath === '/profile')) ||
       (item.path === '/customers' && (currentPath === '/add-customer' || currentPath === '/customer-details' || currentPath === '/invoice' || currentPath.startsWith('/customer'))) ||
       (item.path === '/staff' && (currentPath === '/create-staff' || currentPath === '/update-staff' || currentPath.startsWith('/staff'))) || // Check for staff routes
       (item.path === '/isp' && (currentPath === '/create-isp' || currentPath === '/update-staff' || currentPath.startsWith('/isp') || currentPath.startsWith('/create-pkg'))) || // Check for staff routes
@@ -199,7 +200,7 @@ function SidebarLayout() {
             }}
           />
         </Box>
-        <Divider sx={{ bgcolor: 'rgba(255,255,255,0.1)', my: 1 }} />
+        <Divider sx={{ bgcolor: 'rgba(255,255,255,0.4)', my: 1 }} />
         <List sx={{ height: "100vh" }}>
           {/* ... (keep your existing list items with enhanced styling) */}
           {filteredItems.map((item, index) => (
@@ -296,7 +297,7 @@ function SidebarLayout() {
               }}
             />
           </Box>
-          <Divider sx={{ bgcolor: 'rgba(255,255,255,0.1)', my: 1 }} />
+          <Divider sx={{ bgcolor: 'rgba(255,255,255,0.4)', my: 1 }} />
           <List sx={{ padding: '4px 8px' }}>
             {filteredItems.map((item, index) => (
               <ListItem

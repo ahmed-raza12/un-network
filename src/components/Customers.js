@@ -26,7 +26,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchCustomers, deleteCustomers, searchCustomers } from '../store/actions/customerActions';
 import { useNavigate } from 'react-router-dom';
 import colors from '../colors';
-import { Search as SearchIcon, Visibility as VisibilityIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Search as SearchIcon, Visibility as VisibilityIcon, Delete as DeleteIcon, PersonAdd } from '@mui/icons-material';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
 function Customers() {
     const dispatch = useDispatch();
@@ -190,6 +191,16 @@ function Customers() {
                         </Button>
                     )}
                 </Toolbar>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            startIcon={<PersonAddIcon />}
+                            onClick={() => navigate('/add-customer')}
+                        >
+                            Create Customer
+                        </Button>
+                    </Box>
 
                 {/* Customer Table */}
                 <TableContainer>
@@ -218,7 +229,7 @@ function Customers() {
                                 <TableCell sx={{ color: "white" }}>Phone</TableCell>
                                 <TableCell sx={{ color: "white" }}>CNIC</TableCell>
                                 <TableCell sx={{ color: "white" }}>Address</TableCell>
-                                <TableCell sx={{ color: "white" }}>Actions</TableCell>
+                                <TableCell sx={{ color: "white" }}>View</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
