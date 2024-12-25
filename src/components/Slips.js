@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, Typography, Divider, Grid, Paper, Button, TextField, Select, MenuItem, FormControl, InputLabel, CircularProgress } from '@mui/material';
+import { Box, Typography, Divider, Grid, Alert, Paper, Button, TextField, Select, MenuItem, FormControl, InputLabel, CircularProgress } from '@mui/material';
 import { green } from '@mui/material/colors';
 import { useReactToPrint } from 'react-to-print';
 import { createInvoice } from '../store/actions/invoiceActions';
@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ref, query, orderByChild, equalTo, get } from 'firebase/database';
 import { db } from '../firebase';
 // import { debounce } from 'lodash';
-
+import colors from '../colors';
 const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
     <div ref={ref}>
         <Paper elevation={0} sx={{
@@ -116,11 +116,15 @@ const Slips = () => {
     const [customerName, setCustomerName] = useState('');
     const [ispName, setIspName] = useState('');
     const [pkg, setPkg] = useState('');
+    const [month, setMonth] = useState(new Date().toISOString().slice(0, 7)); // Default to current month in YYYY-MM format
     const [amount, setAmount] = useState('');
-    const [month, setMonth] = useState('');
     const [address, setAddress] = useState('');
     const [phone, setPhone] = useState('');
     const chargedBy = useSelector((state) => state.auth.user.name);
+
+    const [error, setError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState({});
+
     const dispatch = useDispatch();
     const dealerId = useSelector((state) => state.auth.user.uid);
     const userId = useSelector((state) => state.auth.user.uid);
@@ -132,11 +136,11 @@ const Slips = () => {
         content: () => componentRef.current,
     });
 
-
+    console.log(month, 'month');
     const fetchLatestInvoiceNumber = async () => {
         const targetDealerId = role === 'staff' ? userId : staffDealerId;
         const year = new Date().getFullYear();
-        
+
         console.log('Fetching invoice number for year:', userId, year);
         try {
             const countRef = ref(db, `userInvoiceCounts/${userId}/${year}`);
@@ -157,64 +161,24 @@ const Slips = () => {
         fetchLatestInvoiceNumber();
     }, [userId, dealerId, staffDealerId, role, currentInvoiceNumber]);
 
-    // const fetchCustomerDetails = (id) => {
-    //     console.log(dealerId, 'id');
-    //     try {
-    //         const customers = role === 'staff' ? JSON.parse(localStorage.getItem(`customers_${staffDealerId}`)) || [] : JSON.parse(localStorage.getItem(`customers_${dealerId}`)) || [];
-    //         console.log(customers, 'customers');
-
-    //         const customer = role === 'staff' ? customers.data.find(c => c.userName === id && c.dealerId === staffDealerId) : customers.find(c => c.userName === id);
-    //         return customer || null;
-    //     } catch (error) {
-    //         console.error('Error fetching customer details:', error);
-    //         return null;
-    //     }
-    // };
-
-    // const handleCustomerName = (e) => {
-    //     const id = e.target.value;
-    //     setUserName(id);
-    //     console.log(id, 'id');
-
-    //     if (id) {
-    //         const customerDetails = fetchCustomerDetails(id);
-    //         console.log(customerDetails, 'customerDetails');
-
-    //         if (customerDetails) {
-    //             setCustomerName(customerDetails.fullName || '');
-    //             setIspName(customerDetails.ispName || '');
-    //             setAddress(customerDetails.address || '');
-    //             setPhone(customerDetails.phone || '');
-    //             setUserName(customerDetails.userName || '');
-    //             setPkg(customerDetails.package || '');
-    //             setCustomerId(customerDetails.id || '');
-    //         } else {
-    //             setCustomerName('');
-    //             setIspName('');
-    //             setAddress('');
-    //             setPhone('');
-    //         }
-    //     }
-    // };
+    const clearCustomerDetails = () => {
+        setCustomerName('');
+        setIspName('');
+        setAddress('');
+        setPhone('');
+        setPkg('');
+        setCustomerId('');
+    };
 
     const fetchCustomerDetails = async (username) => {
-
         try {
             const targetDealerId = role === 'staff' ? staffDealerId : dealerId;
             const customerRef = ref(db, `customers/${targetDealerId}`);
-
-            // Create query to search by userName
-            const customerQuery = query(
-                customerRef,
-                orderByChild('userName'),
-                equalTo(username)
-            );
-
+            const customerQuery = query(customerRef, orderByChild('userName'), equalTo(username));
             const snapshot = await get(customerQuery);
-            console.log(snapshot.val());
+
             if (snapshot.exists()) {
-                // Convert the first matching customer to an object
-                const customerData = Object.entries(snapshot.val())[0][1];
+                const customerData = Object.values(snapshot.val())[0];
                 return customerData;
             }
             return null;
@@ -224,69 +188,80 @@ const Slips = () => {
         }
     };
 
-    const handleCustomerName = async (e) => {
-        const username = e.target.value;
-        console.log(username, 'username');
-        setUserName(username);
+    const handleSearch = async (e) => {
+        e.preventDefault(); // Prevent form submission
+        setError('');
+        setFieldErrors({});
 
-        if (username) {
-            // Show loading state if needed
-            setIsLoading(true);
+        if (!userName.trim()) {
+            setError('Customer username is required');
+            return;
+        }
 
-            try {
-                const customerDetails = await fetchCustomerDetails(username);
-
-                if (customerDetails) {
-                    setCustomerName(customerDetails.fullName || '');
-                    setIspName(customerDetails.ispName || '');
-                    setAddress(customerDetails.address || '');
-                    setPhone(customerDetails.phone || '');
-                    setUserName(customerDetails.userName || '');
-                    setPkg(customerDetails.package || '');
-                    setCustomerId(customerDetails.id || '');
-                } else {
-                    // Clear fields if no customer found
-                    setCustomerName('');
-                    setIspName('');
-                    setAddress('');
-                    setPhone('');
-                    setPkg('');
-                    setCustomerId('');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                // Handle error (maybe show an error message to user)
-            } finally {
-                setIsLoading(false);
+        setIsLoading(true);
+        try {
+            const customerDetails = await fetchCustomerDetails(userName);
+            if (customerDetails) {
+                setCustomerName(customerDetails.fullName || '');
+                setIspName(customerDetails.ispName || '');
+                setAddress(customerDetails.address || '');
+                setPhone(customerDetails.phone || '');
+                setPkg(customerDetails.package || '');
+                setCustomerId(customerDetails.id || '');
+                setError('');
+            } else {
+                setError('No customer found');
+                clearCustomerDetails();
             }
-        } else {
-            // Clear fields if input is empty
-            setCustomerName('');
-            setIspName('');
-            setAddress('');
-            setPhone('');
-            setPkg('');
-            setCustomerId('');
+        } catch (err) {
+            console.error(err);
+            setError('An error occurred while fetching customer details');
+            clearCustomerDetails();
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    // Add a debounced version of handleCustomerName to prevent too many DB queries
-    // const debouncedHandleCustomerName = debounce((e) => {
-    //     handleCustomerName(e);
-    // }, 500);
+    const validateFields = () => {
+        const errors = {};
+        const fields = {
+            customerName: 'Customer Name',
+            userName: 'User Name',
+            ispName: 'ISP Name',
+            amount: 'Amount',
+            address: 'Address',
+            phone: 'Phone',
+            pkg: 'Package'
+        };
+
+        Object.entries(fields).forEach(([key, label]) => {
+            if (!eval(key)?.trim()) {
+                errors[key] = `${label} is required`;
+            }
+        });
+
+        setFieldErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (!validateFields()) return;
+
         const date = new Date();
         const year = date.getFullYear();
-        const month = date.getMonth() + 1;
 
+        const monthNumber = new Date(month).getMonth() + 1;
+        const monthString = monthNumber.toString().padStart(2, '0');
+        console.log(monthString, 'monthString');
         const invoiceData = {
             invoiceNumber: currentInvoiceNumber,
             date,
             chargedBy,
             userName,
             customerId,
-            month,
+            package: pkg,
+            month: Number(monthString),
             userName,
             customerName,
             dealerId: role === 'staff' ? staffDealerId : dealerId,
@@ -297,15 +272,8 @@ const Slips = () => {
         };
 
         dispatch(createInvoice(invoiceData, userId))
-        .then(() => fetchLatestInvoiceNumber())
+            .then(() => fetchLatestInvoiceNumber())
         handlePrint();
-
-        setCustomerName('');
-        setIspName('');
-        setAddress('');
-        setPhone('');
-        setPkg('');
-        setCustomerId('');
     };
 
     const receiptData = {
@@ -322,14 +290,49 @@ const Slips = () => {
         phone
     };
 
+    const handleSearchFormSubmit = (e) => {
+        e.preventDefault();
+        handleSearch(e);
+    };
+
     return (
         <Box sx={{ p: 3 }}>
-            <Paper elevation={3} sx={{ p: 3, maxWidth: 800, margin: 'auto' }}>
-                <Typography variant="h5" gutterBottom color="#6b49e4">
+            <Paper elevation={3} sx={{ p: { xs: 2, sm: 3 }, maxWidth: 800, margin: 'auto' }}>
+                <Typography variant="h5" gutterBottom color={colors.secondary}>
                     Create Receipt
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
 
+                {error && (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                        {error}
+                    </Alert>
+                )}
+                <form onSubmit={handleSearchFormSubmit}>
+                    <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
+                        <Grid item xs={12} sm={8}>
+                            <TextField
+                                label="Customer Username"
+                                value={userName}
+                                onChange={(e) => setUserName(e.target.value)}
+                                fullWidth
+                                error={!!fieldErrors.userName}
+                                helperText={fieldErrors.userName}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                            <Button
+                                variant="contained"
+                                onClick={handleSearch}
+                                disabled={isLoading}
+                                fullWidth
+                                sx={{ height: '56px' }}
+                            >
+                                {isLoading ? <CircularProgress size={24} /> : 'Search'}
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </form>
                 <form onSubmit={handleSubmit}>
                     <Grid container spacing={3}>
                         <Grid item xs={12} sm={6}>
@@ -342,43 +345,16 @@ const Slips = () => {
                             />
                         </Grid>
 
-                        <Grid item xs={12} sm={12} md={9} lg={8}>
-                            <TextField
-                                label="Customer username"
-                                value={userName}
-                                onChange={(e) => {
-                                    setUserName(e.target.value);
-                                    // debouncedHandleCustomerName(e);
-                                }}
-                                fullWidth
-                                sx={{ mb: 2 }}
-                                InputProps={{
-                                    endAdornment: isLoading && (
-                                        <CircularProgress size={20} />
-                                    )
-                                }}
-                            />
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                onClick={() => handleCustomerName({ target: { value: userName } })} // Pass the input value to handleCustomerName function directly without debouncing effect
-                                // disabled={!inputValue.trim()} // Disable if input is empty
-                                sx={{
-                                    // bgcolor: colors.primary,
-                                    // '&:hover': { bgcolor: colors.secondary }
-                                }}
-                            >
-                                Search
-                            </Button>
-                        </Grid>
-
                         <Grid item xs={12} sm={6}>
                             <TextField
-                                label="Date"
-                                type="date"
+                                label="Month"
+                                type="month"
                                 value={month}
-                                onChange={(e) => setMonth(e.target.value)}
-                                fullWidth
+                                onChange={(e) => {
+                                    console.log(e.target.value); // Log the value to debug
+                                    setMonth(e.target.value);
+                                }}
+                                                                fullWidth
                                 InputLabelProps={{ shrink: true }}
                                 sx={{ mb: 2 }}
                             />
@@ -389,6 +365,9 @@ const Slips = () => {
                                 value={userName}
                                 onChange={handleCustomerName}
                                 fullWidth
+                                                error={!!fieldErrors.customerName}
+                helperText={fieldErrors.customerName}
+
                                 sx={{ mb: 2 }}
                             />
                         </Grid> */}
@@ -399,6 +378,9 @@ const Slips = () => {
                                 disabled
                                 onChange={() => setCustomerName(userName)}
                                 fullWidth
+                                error={!!fieldErrors.customerName}
+                                helperText={fieldErrors.customerName}
+
                                 sx={{ mb: 2 }}
                             />
                         </Grid>
@@ -408,6 +390,8 @@ const Slips = () => {
                                 value={ispName}
                                 disabled
                                 fullWidth
+                                error={!!fieldErrors.ispName}
+                                helperText={fieldErrors.ispName}
                                 sx={{ mb: 2 }}
                             />
                         </Grid>
@@ -417,6 +401,8 @@ const Slips = () => {
                                 value={address}
                                 disabled
                                 fullWidth
+                                error={!!fieldErrors.address}
+                                helperText={fieldErrors.address}
                                 sx={{ mb: 2 }}
                             />
                         </Grid>
@@ -426,6 +412,8 @@ const Slips = () => {
                                 value={phone}
                                 disabled
                                 fullWidth
+                                error={!!fieldErrors.phone}
+                                helperText={fieldErrors.phone}
                                 sx={{ mb: 2 }}
                             />
                         </Grid>
@@ -436,23 +424,11 @@ const Slips = () => {
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
                                 fullWidth
+                                error={!!fieldErrors.amount}
+                                helperText={fieldErrors.amount}
                                 sx={{ mb: 2 }}
                             />
                         </Grid>
-                        {/* <Grid item xs={12} sm={6}>
-                            <FormControl fullWidth sx={{ mb: 2 }}>
-                                <InputLabel>Month</InputLabel>
-                                <Select
-                                    value={month}
-                                    label="Month"
-                                    onChange={(e) => setMonth(e.target.value)}
-                                >
-                                    <MenuItem value="OLD">OLD</MenuItem>
-                                    <MenuItem value="CURRENT">CURRENT</MenuItem>
-                                    <MenuItem value="ADV">ADV</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Grid> */}
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 label="Package"
@@ -460,6 +436,8 @@ const Slips = () => {
                                 onChange={(e) => setPkg(e.target.value)}
                                 disabled
                                 fullWidth
+                                error={!!fieldErrors.pkg}
+                                helperText={fieldErrors.pkg}
                                 sx={{ mb: 2 }}
                             />
                         </Grid>
@@ -467,27 +445,24 @@ const Slips = () => {
                             <TextField
                                 label="Charged By"
                                 value={chargedBy}
-                                // onChange={(e) => setChargedBy(e.target.value)}
                                 fullWidth
                                 sx={{ mb: 2 }}
                             />
                         </Grid>
                     </Grid>
 
-                    <Button
-                        type="submit"
-                        variant="contained"
-                        fullWidth
-                        sx={{
-                            mt: 3,
-                            backgroundColor: '#6b49e4',
-                            '&:hover': {
-                                backgroundColor: '#5438b3'
-                            }
-                        }}
-                    >
-                        Generate & Print Receipt
-                    </Button>
+                    <Grid item xs={12}>
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            color="primary"
+                            fullWidth
+                            size="large"
+                        // disabled={isLoading || Object.keys(fieldErrors).length > 0}
+                        >
+                            Generate Receipt
+                        </Button>
+                    </Grid>
                 </form>
             </Paper>
 

@@ -51,7 +51,7 @@ const CreateISP = () => {
     const [loading, setLoading] = useState(false);
     const { state } = location;
     const selectedDealer = state;
-
+    console.log(selectedDealer, 'selectedDealer');
     const [formData, setFormData] = useState({
         name: '',
         email: '',

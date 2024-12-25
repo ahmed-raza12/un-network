@@ -33,9 +33,10 @@ function Customers() {
     const dispatch = useDispatch();
     const { customers, currentPage, totalPages, totalCustomers } = useSelector((state) => state.customers);
     const role = useSelector((state) => state.auth.user.role);
-    const dealeruId = useSelector((state) => state.auth.user.uid);
+    const userId = useSelector((state) => state.auth.user.uid);
+    const dealerId = useSelector((state) => state.auth.user.dealerId);
+    const dealerRealId = role === 'dealer' ? userId : dealerId;
     const navigate = useNavigate();
-
     // States for search and pagination
     const [inputValue, setInputValue] = useState(''); // For text input value
     const [searchQuery, setSearchQuery] = useState(''); // Actual query to trigger search
@@ -43,7 +44,6 @@ function Customers() {
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [selectedCustomerIds, setSelectedCustomerIds] = useState([]);
-
     // Fetch customers on page load or when searchQuery/page changes
     useEffect(() => {
         if (!isSearchMode) {
@@ -54,7 +54,7 @@ function Customers() {
     const fetchCustomersData = async () => {
         setIsLoading(true);
         try {
-            const targetDealerId = role === 'dealer' ? dealeruId : null;
+            const targetDealerId = role === 'dealer' ? dealerRealId : null;
             await dispatch(fetchCustomers(page, '', targetDealerId));
         } catch (error) {
             console.error('Error fetching customers:', error);
@@ -78,7 +78,7 @@ function Customers() {
         setIsLoading(true);
         setIsSearchMode(true);
         try {
-            await dispatch(searchCustomers(inputValue.trim(), dealeruId));
+            await dispatch(searchCustomers(inputValue.trim(), dealerRealId));
         } catch (error) {
             console.error('Error searching customers:', error);
         } finally {
@@ -130,7 +130,7 @@ function Customers() {
     // Delete multiple customers
     const handleDeleteSelected = () => {
         if (selectedCustomerIds.length === 0) return;
-        dispatch(deleteCustomers(selectedCustomerIds, dealeruId)).then(() => {
+        dispatch(deleteCustomers(selectedCustomerIds, dealerRealId)).then(() => {
             setSelectedCustomerIds([]);
             dispatch(fetchCustomers(page, searchQuery)); // Refresh list after deletion
         });
@@ -138,7 +138,7 @@ function Customers() {
 
     // Delete individual customer
     const handleDeleteCustomer = (id) => {
-        dispatch(deleteCustomers([id], dealeruId)).then(() => {
+        dispatch(deleteCustomers([id], dealerRealId)).then(() => {
             dispatch(fetchCustomers(page, searchQuery)); // Refresh list after deletion
         });
     };
@@ -158,24 +158,27 @@ function Customers() {
                     />
                     <Button
                         variant="contained"
-                        color="primary"
+                        color={colors.primary}
                         onClick={handleSearchClick}
                         disabled={!inputValue.trim()}
                         sx={{
                             bgcolor: colors.primary,
+                            height: '56px',
+                            width: '100px',
+                            color: 'white',
                             '&:hover': { bgcolor: colors.secondary }
                         }}
                     >
                         Search
                     </Button>
-                    {isSearchMode && (
+                    {/* {isSearchMode && (
                         <Button
                             variant="outlined"
                             onClick={handleResetSearch}
                         >
                             Clear Search
                         </Button>
-                    )}
+                    )} */}
                 </Box>                <Toolbar sx={{ justifyContent: 'space-between', mb: 2 }}>
                     <Typography variant="h6">
                         {searchQuery !== '' ? 'Search Results' : 'All Customers'}: {totalCustomers}
@@ -191,83 +194,88 @@ function Customers() {
                         </Button>
                     )}
                 </Toolbar>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            startIcon={<PersonAddIcon />}
-                            onClick={() => navigate('/add-customer')}
-                        >
-                            Create Customer
-                        </Button>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        startIcon={<PersonAddIcon />}
+                        onClick={() => navigate('/add-customer')}
+                    >
+                        Create Customer
+                    </Button>
+                </Box>
+                {isLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
+                        <CircularProgress />
                     </Box>
-
-                {/* Customer Table */}
-                <TableContainer>
-                    <Table>
-                        <TableHead>
-                            <TableRow sx={{ backgroundColor: colors.primary }}>
-                                <TableCell padding="checkbox">
-                                    <Checkbox
-                                        indeterminate={
-                                            Array.isArray(customers) &&
-                                            selectedCustomerIds.length > 0 &&
-                                            selectedCustomerIds.length < customers.length
-                                        }
-                                        checked={
-                                            Array.isArray(customers) &&
-                                            customers.length > 0 &&
-                                            selectedCustomerIds.length === customers.length
-                                        }
-                                        onChange={handleSelectAll}
-                                    />
-                                </TableCell>
-                                        
-                                <TableCell sx={{ color: "white" }}>#</TableCell>
-                                <TableCell sx={{ color: "white" }}>Customer ID</TableCell>
-                                <TableCell sx={{ color: "white" }}>Full Name</TableCell>
-                                <TableCell sx={{ color: "white" }}>Phone</TableCell>
-                                <TableCell sx={{ color: "white" }}>CNIC</TableCell>
-                                <TableCell sx={{ color: "white" }}>Address</TableCell>
-                                <TableCell sx={{ color: "white" }}>View</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {Array.isArray(customers) && customers.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} align="center">
-                                        No customers found
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                customers.map((customer, index) => (
-                                    <TableRow
-                                        key={customer.id}
-                                        hover
-                                        sx={{ cursor: 'pointer' }}
-                                    >
+                ) : (
+                    <>
+                        {/* Customer Table */}
+                        <TableContainer>
+                            <Table>
+                                <TableHead>
+                                    <TableRow sx={{ backgroundColor: colors.primary }}>
                                         <TableCell padding="checkbox">
                                             <Checkbox
-                                                checked={selectedCustomerIds.includes(customer.id)}
-                                                onChange={() => handleSelectCustomer(customer.id)}
+                                                indeterminate={
+                                                    Array.isArray(customers) &&
+                                                    selectedCustomerIds.length > 0 &&
+                                                    selectedCustomerIds.length < customers.length
+                                                }
+                                                checked={
+                                                    Array.isArray(customers) &&
+                                                    customers.length > 0 &&
+                                                    selectedCustomerIds.length === customers.length
+                                                }
+                                                onChange={handleSelectAll}
                                             />
                                         </TableCell>
-                                        <TableCell>{index + 1}</TableCell>
-                                        <TableCell>{customer.userName}</TableCell>
-                                        <TableCell>{customer.fullName}</TableCell>
-                                        <TableCell>{customer.phone}</TableCell>
-                                        <TableCell>{customer.cnic}</TableCell>
-                                        <TableCell>{customer.address}</TableCell>
-                                        <TableCell align="right">
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => handleCustomerClick(customer)}
-                                                sx={{ color: colors.primary }}
+
+                                        <TableCell sx={{ color: "white" }}>#</TableCell>
+                                        <TableCell sx={{ color: "white" }}>Customer ID</TableCell>
+                                        <TableCell sx={{ color: "white" }}>Full Name</TableCell>
+                                        <TableCell sx={{ color: "white" }}>Phone</TableCell>
+                                        <TableCell sx={{ color: "white" }}>CNIC</TableCell>
+                                        <TableCell sx={{ color: "white" }}>Address</TableCell>
+                                        <TableCell sx={{ color: "white" }}>View</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {Array.isArray(customers) && customers.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={6} align="center">
+                                                No customers found
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        customers.map((customer, index) => (
+                                            <TableRow
+                                                key={customer.id}
+                                                hover
+                                                sx={{ cursor: 'pointer' }}
                                             >
-                                                <VisibilityIcon />
-                                            </IconButton>
-                                        </TableCell>
-                                        {/* <TableCell>
+                                                <TableCell padding="checkbox">
+                                                    <Checkbox
+                                                        checked={selectedCustomerIds.includes(customer.id)}
+                                                        onChange={() => handleSelectCustomer(customer.id)}
+                                                    />
+                                                </TableCell>
+                                                <TableCell>{index + 1}</TableCell>
+                                                <TableCell>{customer.userName}</TableCell>
+                                                <TableCell>{customer.fullName}</TableCell>
+                                                <TableCell>{customer.phone}</TableCell>
+                                                <TableCell>{customer.CNIC}</TableCell>
+                                                <TableCell>{customer.address}</TableCell>
+                                                <TableCell align="right">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => handleCustomerClick(customer)}
+                                                        sx={{ color: colors.primary }}
+                                                    >
+                                                        <VisibilityIcon />
+                                                    </IconButton>
+                                                </TableCell>
+                                                {/* <TableCell>
                                             <IconButton
                                                 color="error"
                                                 onClick={() => handleDeleteCustomer(customer.id)}
@@ -275,12 +283,14 @@ function Customers() {
                                                 <DeleteIcon />
                                             </IconButton>
                                         </TableCell> */}
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </>
+                )}
 
 
                 {/* Pagination */}

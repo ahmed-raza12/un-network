@@ -28,9 +28,10 @@ const staffReducer = (state = initialState, action) => {
                 error: action.payload,
             };
         case FETCH_STAFF_SUCCESS:
+            console.log(action.payload);
             return {
                 ...state,
-                staff: action.payload,
+                staff: Array.isArray(action.payload) ? action.payload : [],
                 error: null,
             };
         case FETCH_STAFF_FAILURE:

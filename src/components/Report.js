@@ -20,6 +20,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchInvoicesByDateRange, fetchInvoicesByDateRanges } from '../store/actions/reportActions';
 import generateTestInvoices from '../utils/generateTestInvoices';
 import { fetchStaff, fetchStaffByDealerId } from '../store/actions/staffActions';
+import colors from '../colors';
 
 function Report() {
   const dispatch = useDispatch();
@@ -46,7 +47,7 @@ function Report() {
       try {
         if (isDealer) {
           console.log(dealerId, 'dealerId');
-          await dispatch(fetchStaffByDealerId(dealerId));
+          await dispatch(fetchStaff());
         } else {
           await dispatch(fetchStaff());
         }
@@ -199,9 +200,9 @@ function Report() {
               fullWidth
               sx={{
                 height: '56px',
-                backgroundColor: '#4CAF50',
+                backgroundColor: colors.secondary,
                 '&:hover': {
-                  backgroundColor: '#45a049',
+                  backgroundColor: colors.primary,
                 }
               }}
             >

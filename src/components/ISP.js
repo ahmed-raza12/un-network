@@ -24,6 +24,8 @@ const ISP = () => {
     const isps = useSelector(state => state.isp.isps);
     const error = useSelector(state => state.isp.error);
     const role = useSelector(state => state.auth.user.role);
+    const uid = useSelector(state => state.auth.user.uid);
+    const dealerId = useSelector(state => state.auth.user.dealerId);
     const [selectedDealer, setSelectedDealer] = useState(() => {
         const savedDealer = localStorage.getItem('selectedIsp');
         return savedDealer || '';
@@ -70,7 +72,7 @@ const ISP = () => {
         }
         navigate('/create-isp', { 
             state: { 
-                selectedDealer: role === 'admin' ? selectedDealer : null 
+                selectedDealer: role === 'admin' ? selectedDealer : role === 'staff' ? dealerId : uid 
             } 
         });
     };

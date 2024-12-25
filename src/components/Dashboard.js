@@ -22,6 +22,7 @@ import GroupIcon from '@mui/icons-material/Group'; // For Staff
 import Groups2 from '@mui/icons-material/Groups2';
 import ReportIcon from '@mui/icons-material/Report';
 import DeleteAllUsers from './DeleteAllUsers'; // Import DeleteAllUsers component
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 const drawerWidth = 240;
 
 function Dashboard() {
@@ -29,7 +30,6 @@ function Dashboard() {
     const [selectedIndex, setSelectedIndex] = useState(0); // State for selected tab
     const role = useSelector(state => state.auth.user.role); // Get user role from Redux state
     //   const isLoggedIn = useSelector(state => state.auth.isLoggedIn); // Get login status from Redux state
-    
     const handleLogout = () => {
         dispatch(logout()); // Dispatch logout action
         // Optionally, you can also sign out from Firebase
@@ -43,6 +43,7 @@ function Dashboard() {
                     
                     { label: 'Customers', icon: <PeopleIcon fontSize="large" />, route: '/customers' },
                     { label: 'Staff', icon: <Groups2 fontSize="large" />, route: '/staff' },
+                    { label: 'Add Customer', icon: <PersonAddIcon fontSize="large" />, path: '/add-customer'},
                     { label: 'Reports', icon: <TableChart fontSize="large" />, route: '/reports' },
                     { label: 'Slips', icon: <AddCircle fontSize="large" />, route: '/slips' },
                     { label: 'Manual Slip', icon: <Receipt fontSize="large" />, route: '/manual-slip' },

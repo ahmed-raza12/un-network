@@ -14,7 +14,7 @@ export const login = (credentials) => {
         dispatch({ type: 'LOGIN_SUCCESS', payload: credentials });
         
         // Start real-time syncs after successful login
-        startAllRealtimeSyncs();
+        // startAllRealtimeSyncs();
         
         return true; // Indicate success
       }
@@ -29,10 +29,10 @@ export const logout = () => {
   return (dispatch) => {
     try {
       // Stop all real-time syncs
-      stopAllRealtimeSyncs();
+      // stopAllRealtimeSyncs();
       
       // Clear all localStorage data
-      clearLocalStorage();
+      // clearLocalStorage();
       
       // Reset all reducers to their initial state
       dispatch({ type: 'LOGOUT' });

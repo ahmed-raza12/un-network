@@ -79,8 +79,10 @@ const DealerProfile = () => {
     };
 
     const handleInputChange = (field) => (event) => {
-        setEditedStaff({ ...editedStaff, [field]: event.target.value });
+        const value = field === 'companyCode' ? Number(event.target.value) : event.target.value;
+        setEditedStaff({ ...editedStaff, [field]: value });
     };
+    
 
     const handlePasswordChange = async () => {
         if (!newPassword) {
@@ -294,7 +296,7 @@ const DealerProfile = () => {
                                         type="number"
                                         label="Company Code"
                                         disabled={role === 'admin' ? false : true}
-                                        value={editedStaff.companyCode}
+                                        value={Number(editedStaff.companyCode)}
                                         onChange={handleInputChange('companyCode')}
                                         variant="outlined"
                                         size="small"
@@ -302,7 +304,7 @@ const DealerProfile = () => {
                                 ) : (
                                     <ListItemText
                                         primary="Company Code"
-                                        secondary={dealer.companyCode}
+                                        secondary={Number(dealer.companyCode)}
                                         secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
                                     />
                                 )}

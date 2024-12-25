@@ -25,6 +25,8 @@ import AddCircle from '@mui/icons-material/AddCircle';
 import ReportIcon from '@mui/icons-material/Report';
 import MenuIcon from '@mui/icons-material/Menu';
 import loginLogo from '../assets/panel_logo.png';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+// import '../global.css';
 
 const drawerWidth = 240;
 
@@ -42,8 +44,13 @@ function SidebarLayout() {
     setDrawerOpen(!drawerOpen); // Toggle drawer state
   };
 
+  // In your SidebarLayout component, add this effect:
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
   const handleLogout = () => {
-    dispatch(logout()); // Dispatch logout action
+    dispatch(logout());
+    // Dispatch logout action
     // Optionally, you can also sign out from Firebase
     // const auth = getAuth();
     // auth.signOut();
@@ -56,12 +63,13 @@ function SidebarLayout() {
 
   const items = [
     { text: 'Dashboard', icon: <DashboardIcon fontSize="medium" />, path: '/', roles: ['admin', 'dealer', 'staff'] },
+    { text: 'Slips', icon: <AddCircle fontSize="medium" />, path: '/slips', roles: ['admin', 'dealer', 'staff'] },
+    { text: 'Staff', icon: <Groups2 fontSize="medium" />, path: '/staff', roles: ['admin', 'dealer'] },
+    { text: 'Add Customer', icon: <PersonAddIcon fontSize="medium" />, path: '/add-customer', roles: ['admin', 'dealer', 'staff'] },
     { text: 'Customers', icon: <PeopleIcon fontSize="medium" />, path: '/customers', roles: ['admin', 'dealer', 'staff'] },
     { text: 'Dealers', icon: <BusinessIcon fontSize="medium" />, path: '/dealers', roles: ['admin'] },
-    { text: 'Staff', icon: <Groups2 fontSize="medium" />, path: '/staff', roles: ['admin', 'dealer'] },
     { text: 'ISP', icon: <CellTower fontSize="medium" />, path: '/isp', roles: ['admin', 'dealer'] },
     { text: 'Reports', icon: <TableChart fontSize="medium" />, path: '/reports', roles: ['admin', 'dealer', 'staff'] },
-    { text: 'Slips', icon: <AddCircle fontSize="medium" />, path: '/slips', roles: ['admin', 'dealer', 'staff'] },
     { text: 'Manual Slip', icon: <Receipt fontSize="medium" />, path: '/manual-slip', roles: ['admin', 'dealer'] },
 
     // { text: 'Due Customers', icon: <ReportIcon fontSize="medium" />, path: '/due-customers', roles: ['admin', 'dealer', 'staff'] },
@@ -118,7 +126,23 @@ function SidebarLayout() {
         >
           <MenuIcon />
         </IconButton>
-        <List sx={{ padding: '4px 1px' }}>
+        <List sx={{
+          height: '100%',
+          overflowY: 'auto',
+          '&::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: colors.primary,
+            borderRadius: '8px',
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            backgroundColor: colors.secondary,
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          },
+        }}>
           {filteredItems.map((item, index) => (
             <Tooltip
               title={item.text}
@@ -201,7 +225,10 @@ function SidebarLayout() {
           />
         </Box>
         <Divider sx={{ bgcolor: 'rgba(255,255,255,0.4)', my: 1 }} />
-        <List sx={{ height: "100vh" }}>
+        <List sx={{
+          padding: '4px 8px',
+          height: "100vh"
+        }}>
           {/* ... (keep your existing list items with enhanced styling) */}
           {filteredItems.map((item, index) => (
             <ListItem
@@ -298,7 +325,26 @@ function SidebarLayout() {
             />
           </Box>
           <Divider sx={{ bgcolor: 'rgba(255,255,255,0.4)', my: 1 }} />
-          <List sx={{ padding: '4px 8px' }}>
+          <List
+            sx={{
+              padding: '4px 8px',
+              height: '100%',
+              overflowY: 'auto',
+              '&::-webkit-scrollbar': {
+                width: '7px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: colors.primary,
+                borderRadius: '8px',
+              },
+              '&::-webkit-scrollbar-thumb:hover': {
+                backgroundColor: "#fff",
+              },
+              '&::-webkit-scrollbar-track': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              },
+            }}
+          >
             {filteredItems.map((item, index) => (
               <ListItem
                 key={index}
@@ -510,17 +556,17 @@ function SidebarLayout() {
             minHeight: 'calc(100vh - 130px)',
             transition: 'all 0.3s ease',
             '& > *': {
-                animation: 'fadeIn 0.5s ease-in-out'
+              animation: 'fadeIn 0.5s ease-in-out'
             },
             '@keyframes fadeIn': {
-                '0%': {
-                    opacity: 0,
-                    transform: 'translateY(10px)'
-                },
-                '100%': {
-                    opacity: 1,
-                    transform: 'translateY(0)'
-                }
+              '0%': {
+                opacity: 0,
+                transform: 'translateY(10px)'
+              },
+              '100%': {
+                opacity: 1,
+                transform: 'translateY(0)'
+              }
             }
           }}
         >

@@ -17,7 +17,7 @@ export const addPackage = (packageData, ispId) => {
                 ...packageData,
                 createdAt: new Date().toISOString()
             });
-
+            localStorage.removeItem(`packages_${ispId}`);
             dispatch({
                 type: ADD_PACKAGE,
                 payload: {
@@ -35,12 +35,26 @@ export const addPackage = (packageData, ispId) => {
 };
 
 export const fetchPackages = (ispId) => {
+    console.log('Fetching packages for ISP:', ispId);
     return async (dispatch) => {
         try {
             const packagesRef = ref(db, `packages/${ispId}`);
             const snapshot = await get(packagesRef);
-            const packages = {};
+            let packages = {}; // Change from const to let
 
+            const packageData = localStorage.getItem(`packages_${ispId}`);
+            if (packageData) {
+                console.log('Using cached packages data', typeof JSON.parse(packageData), packageData);
+                // If packages are in localStorage, use them and dispatch
+                packages = JSON.parse(packageData);
+                dispatch({
+                    type: FETCH_PACKAGES,
+                    payload: packages
+                });
+                return packages;
+            }
+            console.log('Fetching packages from Firebase', snapshot.exists());
+            // If no cached data, fetch from Firebase and store in localStorage
             if (snapshot.exists()) {
                 snapshot.forEach((childSnapshot) => {
                     packages[childSnapshot.key] = {
@@ -48,8 +62,12 @@ export const fetchPackages = (ispId) => {
                         ...childSnapshot.val()
                     };
                 });
+                localStorage.setItem(`packages_${ispId}`, JSON.stringify(packages));
             }
 
+            // Save fetched data to localStorage
+
+            // Dispatch the fetched data
             dispatch({
                 type: FETCH_PACKAGES,
                 payload: packages

@@ -45,6 +45,7 @@ export const getPaginatedData = (allCustomers = [], page, searchQuery = '') => {
 };
 
 export const searchCustomers = (searchQuery, dealerId) => async (dispatch) => {
+    console.log('searchQuery:', searchQuery, 'dealerId:', dealerId);
     try {
         // Reference to customers for this dealer
         const customersRef = ref(db, `customers/${dealerId}`);
@@ -123,94 +124,56 @@ export const fetchCustomers = (page, searchQuery = '') => async (dispatch, getSt
         const PAGE_SIZE = 20;
         const customersRef = ref(db, `customers/${dealerId}`);
 
-        // Get total count first
         const countSnapshot = await get(customersRef);
         const totalCustomers = countSnapshot.exists() ? Object.keys(countSnapshot.val()).length : 0;
         const totalPages = Math.ceil(totalCustomers / PAGE_SIZE);
 
-        // Initialize query
-        let customerQuery;
+        let allCustomers = [];
+        const allCustomersSnapshot = await get(customersRef);
         
-        if (page === 1) {
-            // First page query
-            customerQuery = query(
-                customersRef,
-                orderByChild('userName'),
-                limitToFirst(PAGE_SIZE)
-            );
-        } else {
-            // Get the last item from the previous page
-            const previousPageQuery = query(
-                customersRef,
-                orderByChild('userName'),
-                limitToFirst((page - 1) * PAGE_SIZE)
-            );
-            const previousPageSnapshot = await get(previousPageQuery);
-            
-            if (previousPageSnapshot.exists()) {
-                const previousPageData = Object.values(previousPageSnapshot.val());
-                const lastItem = previousPageData[previousPageData.length - 1];
-                
-                // Query starting after the last item from previous page
-                customerQuery = query(
-                    customersRef,
-                    orderByChild('userName'),
-                    startAfter(lastItem.userName),
-                    limitToFirst(PAGE_SIZE)
+        if (allCustomersSnapshot.exists()) {
+            allCustomers = Object.entries(allCustomersSnapshot.val())
+                .map(([id, data]) => ({ id, ...data }))
+                .sort((a, b) => (a.userName || '').localeCompare(b.userName || ''));
+
+            if (searchQuery) {
+                const lowercaseQuery = searchQuery.toLowerCase();
+                allCustomers = allCustomers.filter(customer => 
+                    customer.fullName?.toLowerCase().includes(lowercaseQuery) ||
+                    customer.phone?.includes(lowercaseQuery) ||
+                    customer.userName?.toLowerCase().includes(lowercaseQuery)
                 );
-            } else {
-                // If previous page doesn't exist, return empty results
-                dispatch({
-                    type: FETCH_CUSTOMERS_SUCCESS,
-                    payload: {
-                        customers: [],
-                        currentPage: page,
-                        totalPages,
-                        totalCustomers
-                    }
-                });
-                return;
             }
-        }
 
-        // Fetch the customers for current page
-        const snapshot = await get(customerQuery);
-        let customers = [];
-        
-        if (snapshot.exists()) {
-            customers = Object.entries(snapshot.val()).map(([id, data]) => ({
-                id,
-                ...data
-            }));
-        }
+            const startIdx = (page - 1) * PAGE_SIZE;
+            const endIdx = startIdx + PAGE_SIZE;
+            const paginatedCustomers = allCustomers.slice(startIdx, endIdx);
 
-        // Handle search filtering
-        let filteredCustomers = customers;
-        if (searchQuery) {
-            const lowercaseQuery = searchQuery.toLowerCase();
-            filteredCustomers = customers.filter(customer => 
-                customer.fullName?.toLowerCase().includes(lowercaseQuery) ||
-                customer.phone?.includes(lowercaseQuery) ||
-                customer.userName?.toLowerCase().includes(lowercaseQuery)
-            );
+            dispatch({
+                type: FETCH_CUSTOMERS_SUCCESS,
+                payload: {
+                    customers: paginatedCustomers,
+                    currentPage: page,
+                    totalPages: Math.ceil(allCustomers.length / PAGE_SIZE),
+                    totalCustomers: allCustomers.length
+                }
+            });
+            return;
         }
 
         dispatch({
             type: FETCH_CUSTOMERS_SUCCESS,
             payload: {
-                customers: filteredCustomers,
+                customers: [],
                 currentPage: page,
-                totalPages,
-                totalCustomers: searchQuery ? filteredCustomers.length : totalCustomers
+                totalPages: 0,
+                totalCustomers: 0
             }
         });
 
     } catch (error) {
         console.error("Error fetching customers: ", error);
-        dispatch({
-            type: FETCH_CUSTOMERS_FAILURE,
-            payload: error.message,
-        });
+        dispatch({ type: FETCH_CUSTOMERS_FAILURE, payload: error.message });
     }
 };
 export const fetchCustomersByDealerId = (dealerId, page = 1, searchQuery = '') => async dispatch => {
@@ -251,30 +214,42 @@ export const fetchCustomersByDealerId = (dealerId, page = 1, searchQuery = '') =
 export const addCustomer = (customerData, dealerId) => async (dispatch, getState) => {
     try {
         dispatch({ type: 'SET_LOADING', payload: true });
-        
+
         const customersRef = ref(db, `customers/${dealerId}`);
+        const snapshot = await get(customersRef);
+
+        if (snapshot.exists()) {
+            const existingCustomers = snapshot.val();
+            const usernameExists = Object.values(existingCustomers).some(
+                (customer) => customer.userName === customerData.userName
+            );
+
+            if (usernameExists) {
+                throw new Error('Username already in use');
+            }
+        }
+
         const newCustomerRef = push(customersRef);
-        
         const customer = {
             ...customerData,
             dealerId,
             createdAt: new Date().toISOString(),
         };
-        
+
         await set(newCustomerRef, customer);
-        
+
         dispatch({
             type: ADD_CUSTOMER_SUCCESS,
             payload: { id: newCustomerRef.key, ...customer },
         });
-        
-        dispatch({ type: 'SET_LOADING', payload: false });
     } catch (error) {
-        console.error("Error adding customer: ", error);
+        console.error('Error adding customer: ', error);
         dispatch({
             type: ADD_CUSTOMER_FAILURE,
             payload: error.message,
         });
+        throw error; // Pass error to the caller
+    } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
     }
 };
@@ -294,29 +269,10 @@ export const updateCustomer = (customerId, customerData, dealerId) => async (dis
         const customerRef = ref(db, `customers/${dealerId}/${customerId}`);
         await set(customerRef, updatedData);
 
-        // Get all customers from Firebase to ensure data consistency
-        const customersRef = ref(db, `customers/${dealerId}`);
-        const snapshot = await get(customersRef);
-        let allCustomers = [];
-        if (snapshot.exists()) {
-            const data = snapshot.val();
-            allCustomers = Object.keys(data).map(key => ({
-                ...data[key],
-                id: key
-            }));
-            // Update localStorage with fresh data
-            localStorage.setItem(`customers_${dealerId}`, JSON.stringify(allCustomers));
-        }
-
-        // Get paginated data for current view
-        const currentPage = getState().customers.currentPage || 1;
-        const searchQuery = ''; // You might want to get this from state if you're tracking it
-        const paginatedData = getPaginatedData(allCustomers, currentPage, searchQuery);
-
         // Update Redux state
         dispatch({ 
             type: UPDATE_CUSTOMER_SUCCESS,
-            payload: paginatedData
+            payload: true
         });
         
         return true;
@@ -329,40 +285,15 @@ export const updateCustomer = (customerId, customerData, dealerId) => async (dis
 
 export const deleteCustomer = (customerId, dealerId) => async (dispatch, getState) => {
     try {
-        
+        console.log('Deleting customer:', dealerId, customerId);
         // Delete from Firebase
         const customerRef = ref(db, `customers/${dealerId}/${customerId}`);
         await set(customerRef, null);
-
-        // Get all customers from Firebase to ensure data consistency
-        const customersRef = ref(db, `customers/${dealerId}`);
-        const snapshot = await get(customersRef);
-        let allCustomers = [];
-        if (snapshot.exists()) {
-            const data = snapshot.val();
-            allCustomers = Object.keys(data).map(key => ({
-                ...data[key],
-                id: key
-            }));
-            // Update localStorage with fresh data
-            localStorage.setItem(`customers_${dealerId}`, JSON.stringify(allCustomers));
-        }
-
-        // Get paginated data for current view
-        const currentPage = getState().customers.currentPage || 1;
-        const searchQuery = ''; // You might want to get this from state if you're tracking it
-        const paginatedData = getPaginatedData(allCustomers, currentPage, searchQuery);
-
-        // First dispatch delete success
-        dispatch({
-            type: DELETE_CUSTOMER_SUCCESS,
-            payload: customerId
-        });
-
+        
         // Then update the list with new paginated data
         dispatch({
             type: FETCH_CUSTOMERS_SUCCESS,
-            payload: paginatedData
+            payload: true
         });
         
         return true;

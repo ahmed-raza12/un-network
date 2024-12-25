@@ -18,8 +18,7 @@ import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { useDispatch } from 'react-redux';
 import { updatePackage, deletePackage } from '../store/actions/packageActions';
 import colors from '../colors';
-import { useLocation } from 'react-router-dom';
-import { useParams } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const TextFieldStyle = {
     '& .MuiOutlinedInput-root': {
@@ -39,18 +38,34 @@ const TextFieldStyle = {
 
 const PkgDetails = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const { pkg } = location.state || {};
-    // const { ispId } = useParams();
     const dispatch = useDispatch();
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [editedPkg, setEditedPkg] = useState(pkg);
+    const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
     useEffect(() => {
         setEditedPkg(pkg);
     }, [pkg]);
+
+    const validate = () => {
+        const newErrors = {};
+
+        if (!editedPkg.pkgName || !editedPkg.pkgName.trim()) {
+            newErrors.pkgName = 'Package name is required.';
+        }
+
+        if (!editedPkg.salePrice || editedPkg.salePrice <= 0) {
+            newErrors.salePrice = 'Sale price must be a positive number.';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const handleEditClick = () => {
         setEditDialogOpen(true);
@@ -63,6 +78,7 @@ const PkgDetails = () => {
     const handleEditClose = () => {
         setEditDialogOpen(false);
         setEditedPkg(pkg);
+        setErrors({});
     };
 
     const handleDeleteClose = () => {
@@ -70,6 +86,15 @@ const PkgDetails = () => {
     };
 
     const handleEditSave = async () => {
+        if (!validate()) {
+            setSnackbar({
+                open: true,
+                message: 'Please correct the errors in the form.',
+                severity: 'error'
+            });
+            return;
+        }
+
         setLoading(true);
         try {
             await dispatch(updatePackage(pkg.id, pkg.ispId, editedPkg));
@@ -79,6 +104,7 @@ const PkgDetails = () => {
                 severity: 'success'
             });
             setEditDialogOpen(false);
+            navigate(-1);
         } catch (error) {
             setSnackbar({
                 open: true,
@@ -130,9 +156,6 @@ const PkgDetails = () => {
                             <Typography variant="body2" color="text.secondary">
                                 Sale Price: ${pkg.salePrice}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                Status: {pkg.status}
-                            </Typography>
                         </Box>
                         <Box>
                             <IconButton onClick={handleEditClick} sx={{ color: colors.primary }}>
@@ -157,6 +180,8 @@ const PkgDetails = () => {
                             name="pkgName"
                             value={editedPkg.pkgName}
                             onChange={handleChange}
+                            error={!!errors.pkgName}
+                            helperText={errors.pkgName}
                             sx={TextFieldStyle}
                         />
                         <TextField
@@ -166,6 +191,8 @@ const PkgDetails = () => {
                             type="number"
                             value={editedPkg.salePrice}
                             onChange={handleChange}
+                            error={!!errors.salePrice}
+                            helperText={errors.salePrice}
                             sx={TextFieldStyle}
                         />
                     </Box>

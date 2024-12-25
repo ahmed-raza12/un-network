@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Box, Typography, Grid, Paper, Button, TextField, Divider } from '@mui/material';
 import { green } from '@mui/material/colors';
 import { useReactToPrint } from 'react-to-print';
+import colors from '../colors';
 
 const PrintableQuickSlip = React.forwardRef(({ data }, ref) => (
     <div ref={ref}>
@@ -19,7 +20,7 @@ const PrintableQuickSlip = React.forwardRef(({ data }, ref) => (
         >
             <Box textAlign="center" mb={2}>
                 <Typography variant="h6" fontWeight="bold" color="#6b49e4">
-                    Quick Payment Slip
+                    Payment Slip
                 </Typography>
                 <Typography variant="body2" color="textPrimary">
                     {new Date(data.date).toLocaleDateString()}
@@ -77,8 +78,8 @@ const ManualSlip = () => {
     return (
         <Box sx={{ p: 3 }}>
             <Paper elevation={3} sx={{ p: 3, maxWidth: 800, margin: 'auto' }}>
-                <Typography variant="h5" gutterBottom color="#6b49e4">
-                    Quick Slip Creation
+                <Typography variant="h5" gutterBottom color={colors.secondary}>
+                    Manual Slip
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
                 <Grid container spacing={2}>

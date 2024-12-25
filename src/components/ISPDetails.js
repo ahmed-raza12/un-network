@@ -38,7 +38,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import colors from '../colors';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { deleteISP, updateISP } from '../store/actions/ispActions';
 import { fetchPackages } from '../store/actions/packageActions';
 
@@ -69,13 +69,14 @@ function ISPDetails() {
     const [packages, setPackages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-
+    // const packages = useSelector((state) => state.package.packages);
     useEffect(() => {
         const loadPackages = async () => {
             setLoading(true);
             try {
                 const packagesData = await dispatch(fetchPackages(isp.id));
                 // Convert packages object to array and add id to each package
+                // console.log(packagesData, isp.id, 'fetched packages');
                 const packagesArray = Object.entries(packagesData).map(([id, pkg]) => ({
                     ...pkg,
                     id
@@ -147,6 +148,7 @@ function ISPDetails() {
         if (isEditing) {
             // Save changes
             dispatch(updateISP(isp.id, editedData, isp.dealerId));
+            navigate(-1);
             setSnackbar({
                 open: true,
                 message: 'ISP updated successfully',

@@ -47,10 +47,10 @@ const Login = () => {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       const userId = user.uid;
-
       // Validate company code
       const userRef = ref(db, `users/${userId}`);
       const userSnapshot = await get(userRef);
+      console.log('User ID:', userSnapshot.val());
 
       if (!userSnapshot.exists() || userSnapshot.val().companyCode !== companyCode) {
         setError('Invalid company code');

@@ -76,6 +76,10 @@ function CustomerDetails() {
     const location = useLocation();
     const { state } = location;
     const customer = state;
+    const uid = useSelector((state) => state.auth.user.uid);
+    const role = useSelector((state) => state.auth.user.role);
+    const dealerDid = useSelector((state) => state.auth.user.dealerId);
+    const dealerId = role === 'dealer' ? uid : dealerDid;
     console.log(customer, 'customer');
     const printRef = useRef();
 
@@ -112,9 +116,13 @@ function CustomerDetails() {
 
     const handleSaveEdit = async () => {
         try {
-            await dispatch(updateCustomer(customer.id, editedCustomer, customer.dealerId));
+            console.log('editedCustomer:', editedCustomer);
+
+            await dispatch(updateCustomer(customer.id, editedCustomer, dealerId))
+
             setIsEditing(false);
-            navigate('/customers', { replace: true });
+            // navigate('/customers', { replace: true });
+            navigate(-1)
         } catch (error) {
             console.error('Error updating customer:', error);
             // TODO: Show error message to user
@@ -127,7 +135,8 @@ function CustomerDetails() {
 
     const handleDeleteConfirm = async () => {
         try {
-            await dispatch(deleteCustomer(customer.id, customer.dealerId));
+            console.log('Deleting customer:', customer);
+            await dispatch(deleteCustomer(customer.id, dealerId));
             setOpenDeleteDialog(false);
             navigate('/customers', { replace: true });
         } catch (error) {
@@ -146,7 +155,9 @@ function CustomerDetails() {
 
     const handleViewInvoice = (invoice) => {
         setSelectedInvoice(invoice);
-        navigate(`/invoice/${invoice.id}`);
+        console.log(invoice, 'invoice');
+        navigate('/receipt', { state: { receiptData: invoice } });
+        // navigate(`/invoice/${invoice.id}`);
     };
 
     const handlePrintInvoice = (invoice) => {
@@ -263,6 +274,26 @@ function CustomerDetails() {
                                         />
                                     )}
                                 </ListItem>
+                                <ListItem>
+                                    <ListItemIcon>
+                                        <Badge sx={{ color: 'darkblue' }} />
+                                    </ListItemIcon>
+                                    {isEditing ? (
+                                        <TextField
+                                            fullWidth
+                                            label="Customer ID"
+                                            disabled
+                                            value={editedCustomer?.userName || ''}
+                                            onChange={handleInputChange('userName')}
+                                        />
+                                    ) : (
+                                        <ListItemText
+                                            primary="Customer ID"
+                                            secondary={customer?.userName}
+                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                        />
+                                    )}
+                                </ListItem>
 
                                 <ListItem>
                                     <ListItemIcon>
@@ -291,14 +322,53 @@ function CustomerDetails() {
                                     {isEditing ? (
                                         <TextField
                                             fullWidth
-                                            label="Address"
+                                            label="address"
                                             value={editedCustomer?.address || ''}
                                             onChange={handleInputChange('address')}
                                         />
                                     ) : (
                                         <ListItemText
-                                            primary="Address"
+                                            primary="address"
                                             secondary={customer?.address}
+                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                        />
+                                    )}
+                                </ListItem>
+
+                                <ListItem>
+                                    <ListItemIcon>
+                                        <Badge sx={{ color: 'darkblue' }} />
+                                    </ListItemIcon>
+                                    {isEditing ? (
+                                        <TextField
+                                            fullWidth
+                                            label="CNIC"
+                                            value={editedCustomer?.CNIC || ''}
+                                            onChange={handleInputChange('CNIC')}
+                                        />
+                                    ) : (
+                                        <ListItemText
+                                            primary="CNIC"
+                                            secondary={customer?.CNIC}
+                                            secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
+                                        />
+                                    )}
+                                </ListItem>
+                                <ListItem>
+                                    <ListItemIcon>
+                                        <Badge sx={{ color: 'darkblue' }} />
+                                    </ListItemIcon>
+                                    {isEditing ? (
+                                        <TextField
+                                            fullWidth
+                                            label="ISP Name"
+                                            value={editedCustomer?.ispName || ''}
+                                            onChange={handleInputChange('ispName')}
+                                        />
+                                    ) : (
+                                        <ListItemText
+                                            primary="ISP Name"
+                                            secondary={customer?.ispName}
                                             secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
                                         />
                                     )}
@@ -325,53 +395,6 @@ function CustomerDetails() {
                                 </ListItem>
                             </List>
                         </Paper>
-                        {/* <Paper elevation={0} sx={{ p: { xs: 2, md: 3 }, bgcolor: 'background.default', width: '100%' }}>
-                            <List>
-                                <ListItem>
-                                    <ListItemIcon>
-                                        <CalendarToday sx={{ color: 'darkblue' }} />
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary="Last Recharge"
-                                        secondary="13-11-24"
-                                        secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                    />
-                                </ListItem>
-
-                                <ListItem>
-                                    <ListItemIcon>
-                                        <Badge sx={{ color: 'darkblue' }} />
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary="Total Package Price"
-                                        secondary="500"
-                                        secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                    />
-                                </ListItem>
-
-                                <ListItem>
-                                    <ListItemIcon>
-                                        <Wallet sx={{ color: 'darkblue' }} />
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary="Abatement (Discount)"
-                                        secondary="None"
-                                        secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                    />
-                                </ListItem>
-
-                                <ListItem>
-                                    <ListItemIcon>
-                                        <Wallet sx={{ color: 'darkblue' }} />
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary="ReceiveAble Amount"
-                                        secondary="500/-"
-                                        secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
-                                    />
-                                </ListItem>
-                            </List>
-                        </Paper> */}
                     </Box>
                 </Box>
             )}
@@ -384,6 +407,7 @@ function CustomerDetails() {
                                     <TableCell>Invoice No</TableCell>
                                     <TableCell>Date</TableCell>
                                     <TableCell>Package</TableCell>
+                                    <TableCell>charged By</TableCell>
                                     <TableCell align="right">Amount</TableCell>
                                     <TableCell align="right">Actions</TableCell>
                                 </TableRow>
@@ -391,9 +415,10 @@ function CustomerDetails() {
                             <TableBody>
                                 {invoices.map((invoice) => (
                                     <TableRow key={invoice.id}>
-                                        <TableCell>{invoice.invoiceNo}</TableCell>
+                                        <TableCell>{invoice.invoiceNumber}</TableCell>
                                         <TableCell>{new Date(invoice.createdAt).toLocaleDateString()}</TableCell>
-                                        <TableCell>{invoice.ispName}</TableCell>
+                                        <TableCell>{invoice.package}</TableCell>
+                                        <TableCell>{invoice.chargedBy}</TableCell>
                                         <TableCell align="right">Rs. {invoice.amount}</TableCell>
                                         <TableCell align="right">
                                             <IconButton

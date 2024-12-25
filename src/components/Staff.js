@@ -83,7 +83,8 @@ const StaffList = () => {
     }, [dispatch, role, selectedDealer]);
 
     const handleStaffClick = (staffMember) => {
-        navigate(`/staff-profile/${staffMember.id}`, { state: { ...staffMember, dealerId: selectedDealer, companyCode } });
+        console.log(staffMember, 'staffMember');
+        navigate(`/staff-profile/${staffMember.id}`, { state: { ...staffMember, dealerId: staffMember.dealerId, companyCode, length: staff.length } });
     };
 
     const handleDealerChange = (event) => {
@@ -118,7 +119,7 @@ const StaffList = () => {
                         <Button
                             type="submit"
                             variant="contained"
-                            onClick={() => navigate('/create-staff', { state: { dealerId: selectedDealer, companyCode } })}
+                            onClick={() => navigate('/create-staff', { state: { dealerId: selectedDealer, companyCode, length: staff.length } })}
                             sx={{
                                 background: colors.gradientBackground,
                                 '&:hover': { background: colors.gradientBackground }

@@ -71,7 +71,7 @@ const StaffProfile = () => {
     const totalInvoices = todayInvoices.length;
     const totalAmount = todayInvoices.reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
 
-    console.log(todayInvoices, 'todayInvoices');
+    console.log(todayInvoices, staffMember, 'todayInvoices');
     useEffect(() => {
         // Fetch invoices when component mounts or when selectedStaffId changes
         dispatch(fetchTodayInvoicesByStaff(dealerId, staffMember.uid));
@@ -419,7 +419,7 @@ const StaffProfile = () => {
                                     <TableBody>
                                         {todayInvoices.map((invoice) => (
                                             <TableRow key={invoice.id}>
-                                                <TableCell>{invoice.invoiceNo || 'N/A'}</TableCell>
+                                                <TableCell>{invoice.invoiceNumber || 'N/A'}</TableCell>
                                                 <TableCell>
                                                     {invoice.createdAt ?
                                                         new Date(invoice.createdAt).toLocaleTimeString() :

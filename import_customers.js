@@ -21,7 +21,7 @@ const db = getDatabase(app);
 async function importCustomers() {
     try {
         // Read the JSON file
-        const rawData = fs.readFileSync('customers.json');
+        const rawData = fs.readFileSync('allCustomers.json');
         const customers = JSON.parse(rawData);
 
         console.log(`Processing ${customers.length} customers...`);
@@ -30,7 +30,7 @@ async function importCustomers() {
         for (const customer of customers) {
             // Generate a new reference with auto ID
 
-            const  uid = 'NSQYnG8h7QhVfkODe8Tp7P1N6AL2'
+            const  uid = 'l405oJnih4Yh5n3itaOIwmcCbI42'
             const newCustomerRef = push(ref(db, `customers/${uid}`));
             // Get the auto-generated key
             const newId = newCustomerRef.key;

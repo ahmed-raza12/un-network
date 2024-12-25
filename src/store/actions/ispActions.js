@@ -28,6 +28,7 @@ export const addISP = (ispData, dealerId = null) => async (dispatch, getState) =
             id: ispId,
             dealerId: uid // Store the dealer ID with the ISP
         });
+        localStorage.removeItem(`ispsData`);
 
         dispatch({
             type: ADD_ISP_SUCCESS,
@@ -49,8 +50,17 @@ export const addISP = (ispData, dealerId = null) => async (dispatch, getState) =
 export const fetchISPs = (dealerId = null) => async (dispatch, getState) => {
     try {
         const user = getState().auth.user;
-        const uid = dealerId || user.uid;  // Use dealerId if provided (admin case), otherwise use user's uid
-        
+        const role = user.role;
+        const uid = role === 'dealer' ? user.uid : user.dealerId;  // Use dealerId if provided (admin case), otherwise use user's uid
+        console.log(uid, 'uid');
+        const cachedIsps = localStorage.getItem(`ispsData`);
+        if (cachedIsps) {
+            dispatch({
+                type: FETCH_ISPS_SUCCESS,
+                payload: JSON.parse(cachedIsps)
+            });
+            return;
+        }
         const ispsRef = ref(db, `isps/${uid}`);
         const snapshot = await get(ispsRef);
         
@@ -62,7 +72,7 @@ export const fetchISPs = (dealerId = null) => async (dispatch, getState) => {
                     id: childSnapshot.key
                 });
             });
-            localStorage.setItem(`isps_${uid}`, JSON.stringify(isps));
+            localStorage.setItem(`ispsData`, JSON.stringify(isps));
         }
 
         dispatch({
@@ -85,7 +95,7 @@ export const deleteISP = (ispId, dealerId = null) => async (dispatch, getState) 
         const uid = dealerId || user.uid;  // Use dealerId if provided (admin case), otherwise use user's uid
         const ispRef = ref(db, `isps/${uid}/${ispId}`);
         await set(ispRef, null);
-
+        localStorage.removeItem(`ispsData`);
         dispatch({
             type: DELETE_ISP_SUCCESS,
             payload: ispId
@@ -111,7 +121,7 @@ export const updateISP = (ispId, ispData, dealerId = null) => async (dispatch, g
             updatedAt: Date.now(),
             id: ispId
         });
-
+        localStorage.removeItem(`ispsData`);
         dispatch({
             type: UPDATE_ISP_SUCCESS,
             payload: { ...ispData, id: ispId }

@@ -42,6 +42,25 @@ export default function CreatePkg() {
         status: 'Active'
     });
 
+    const [errors, setErrors] = useState({});
+
+    const validate = () => {
+        const newErrors = {};
+
+        if (!formData.pkgName.trim()) {
+            newErrors.pkgName = 'Package name is required.';
+        }
+
+        if (!formData.salePrice.trim()) {
+            newErrors.salePrice = 'Sale price is required.';
+        } else if (isNaN(formData.salePrice) || formData.salePrice <= 0) {
+            newErrors.salePrice = 'Sale price must be a positive number.';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleChange = (e) => {
         setFormData({
             ...formData,
@@ -51,12 +70,22 @@ export default function CreatePkg() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!validate()) {
+            setSnackbar({
+                open: true,
+                message: 'Please correct the errors in the form.',
+                severity: 'error'
+            });
+            return;
+        }
+
         setLoading(true);
         try {
             await dispatch(addPackage(formData, ispId));
             setSnackbar({
                 open: true,
-                message: 'Package created successfully',
+                message: 'Package created successfully.',
                 severity: 'success'
             });
             setTimeout(() => {
@@ -88,7 +117,8 @@ export default function CreatePkg() {
                                 name="pkgName"
                                 value={formData.pkgName}
                                 onChange={handleChange}
-                                required
+                                error={!!errors.pkgName}
+                                helperText={errors.pkgName}
                                 sx={TextFieldStyle}
                                 size="small"
                             />
@@ -101,7 +131,8 @@ export default function CreatePkg() {
                                 type="number"
                                 value={formData.salePrice}
                                 onChange={handleChange}
-                                required
+                                error={!!errors.salePrice}
+                                helperText={errors.salePrice}
                                 sx={TextFieldStyle}
                                 size="small"
                             />

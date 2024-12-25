@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Grid, TextField, Button, Paper, Typography, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
+import { Box, Grid, TextField, Button, Paper, Typography, MenuItem, Select, FormControl, InputLabel, Alert } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { addCustomer } from '../store/actions/customerActions';
 import colors from '../colors';
@@ -8,7 +8,8 @@ import { fetchISPs } from '../store/actions/ispActions';
 import { fetchPackages } from '../store/actions/packageActions';
 
 function AddCustomer() {
-  const [firstName, setFirstName] = useState('');
+  // Existing state declarations
+  const [fullName, setFullName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [address, setAddress] = useState('');
@@ -20,12 +21,17 @@ function AddCustomer() {
   const [userName, setUserName] = useState('');
   const [cnic, setCnic] = useState('');
 
+  // Add validation states
+  const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Existing Redux hooks and state
   const dispatch = useDispatch();
   const role = useSelector((state) => state.auth.user.role);
   const dealerId = useSelector((state) => state.auth.user.uid);
   const selectedDealerId = role === 'admin' ? localStorage.getItem('selectedDealer') : dealerId;
   const allIsps = useSelector((state) => state.isp.isps);
-  
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -54,7 +60,7 @@ function AddCustomer() {
 
 
   useEffect(() => {
-    const localIsps = localStorage.getItem(`isps_${selectedDealerId}`);
+    const localIsps = localStorage.getItem('ispsData');
     if (localIsps) {
       dispatch({
         type: 'FETCH_ISPS_SUCCESS',
@@ -64,29 +70,153 @@ function AddCustomer() {
       dispatch(fetchISPs(selectedDealerId));
     }
   }, [dispatch]);
-  const handleSubmit = () => {
-    if (role === 'admin' && !selectedDealerId) {
-      alert('Please select a dealer first');
-      return;
-    }
 
-    const customerData = {
-      firstName,
-      lastName,
-      phoneNumber,
-      address,
-      userPackage,
-      subArea,
-      isp,
-      packageType,
-      amountPaid,
-      userName,
-      cnic,
+  // Validation rules
+  const validateField = (name, value) => {
+    switch (name) {
+      case 'fullName':
+      case 'lastName':
+        return value.trim() ? '' : 'This field is required';
+      case 'phoneNumber':
+        const phoneRegex = /^(\+92|0)?[0-9]{10}$/;
+        if (!value.trim()) return 'Phone number is required';
+        if (!phoneRegex.test(value.replace(/\s/g, ''))) {
+          return 'Invalid phone number format';
+        }
+        return '';
+      case 'address':
+        return value.trim().length >= 5 ? '' : 'Address must be at least 5 characters';
+      case 'userName':
+        const usernameRegex = /^[a-zA-Z0-9_-]{3,20}$/;
+        if (!value.trim()) return 'Username is required';
+        if (!usernameRegex.test(value)) {
+          return 'Username must be 3-20 characters and can only contain letters, numbers, underscores, and hyphens';
+        }
+        return '';
+      case 'cnic':
+        const cnicRegex = /^\d{5}-\d{7}-\d{1}$/;
+        if (!value.trim()) return 'CNIC is required';
+        if (!cnicRegex.test(value)) {
+          return 'CNIC must be in format: 12345-1234567-1';
+        }
+        return '';
+      case 'isp':
+        return value ? '' : 'Please select an ISP';
+      case 'userPackage':
+        return value ? '' : 'Please select a package';
+      default:
+        return '';
+    }
+  };
+
+  // Handle field changes with validation
+  const handleFieldChange = (name, value) => {
+    const fieldSetters = {
+      fullName: setFullName,
+      phoneNumber: setPhoneNumber,
+      address: setAddress,
+      userName: setUserName,
+      cnic: setCnic,
+      isp: setIsp,
+      userPackage: setUserPackage,
     };
 
-    dispatch(addCustomer(customerData, selectedDealerId));
-    localStorage.setItem('customerData', JSON.stringify(customerData));
+    fieldSetters[name](value);
+
+    // Validate field and update errors
+    const fieldError = validateField(name, value);
+    setErrors(prev => ({
+      ...prev,
+      [name]: fieldError
+    }));
   };
+
+  // Format CNIC as user types
+  const handleCnicChange = (e) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 13) {
+      // Format: 12345-1234567-1
+      if (value.length > 5 && value.length <= 12) {
+        value = `${value.slice(0, 5)}-${value.slice(5)}`;
+      } else if (value.length > 12) {
+        value = `${value.slice(0, 5)}-${value.slice(5, 12)}-${value.slice(12)}`;
+      }
+      handleFieldChange('cnic', value);
+    }
+  };
+
+  // Validate all fields before submission
+  const validateForm = () => {
+    const fields = {
+      fullName,
+      phoneNumber,
+      address,
+      userName,
+      cnic,
+      isp,
+      userPackage,
+    };
+
+    const newErrors = {};
+    Object.keys(fields).forEach(field => {
+      const error = validateField(field, fields[field]);
+      if (error) {
+        newErrors[field] = error;
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitError('');
+    setIsSubmitting(true);
+
+    if (!validateForm()) {
+        setSubmitError('Please fix the errors before submitting.');
+        setIsSubmitting(false);
+        return;
+    }
+
+    if (role === 'admin' && !selectedDealerId) {
+        setSubmitError('Please select a dealer first.');
+        setIsSubmitting(false);
+        return;
+    }
+
+    try {
+        const customerData = {
+            fullName,
+            lastName,
+            phoneNumber,
+            address,
+            userPackage,
+            isp,
+            userName,
+            cnic,
+        };
+
+        await dispatch(addCustomer(customerData, selectedDealerId));
+
+        // Clear form after successful submission
+        setFullName('');
+        setPhoneNumber('');
+        setAddress('');
+        setUserPackage('');
+        setIsp('');
+        setUserName('');
+        setCnic('');
+        setErrors({});
+    } catch (error) {
+        setSubmitError(error.message || 'Failed to create customer. Please try again.');
+    } finally {
+        setIsSubmitting(false);
+    }
+};
+
+  // Keep existing useEffect hooks...
 
   return (
     <Box sx={{ backgroundColor: '#f4f6fd', padding: 4, borderRadius: 2, maxWidth: "auto" }}>
@@ -95,27 +225,23 @@ function AddCustomer() {
           Create New Customer
         </Typography>
 
+        {submitError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {submitError}
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="First Name"
-                name="firstName"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-                sx={TextFieldStyle}
-                size="small"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Last Name"
-                name="lastName"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
+                label="Full Name"
+                name="fullName"
+                value={fullName}
+                onChange={(e) => handleFieldChange('fullName', e.target.value)}
+                error={!!errors.fullName}
+                helperText={errors.fullName}
                 required
                 sx={TextFieldStyle}
                 size="small"
@@ -127,7 +253,9 @@ function AddCustomer() {
                 label="Phone Number"
                 name="phoneNumber"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={(e) => handleFieldChange('phoneNumber', e.target.value)}
+                error={!!errors.phoneNumber}
+                helperText={errors.phoneNumber}
                 required
                 sx={TextFieldStyle}
                 size="small"
@@ -139,49 +267,82 @@ function AddCustomer() {
                 label="Address"
                 name="address"
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
+                onChange={(e) => handleFieldChange('address', e.target.value)}
+                error={!!errors.address}
+                helperText={errors.address}
+                required
+                sx={TextFieldStyle}
+                size="small"
+              />
+            </Grid>
+            
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="CNIC"
+                name="cnic"
+                value={cnic}
+                onChange={handleCnicChange}
+                error={!!errors.cnic}
+                helperText={errors.cnic || 'Format: 12345-1234567-1'}
                 required
                 sx={TextFieldStyle}
                 size="small"
               />
             </Grid>
             <Grid item xs={6}>
-              <FormControl fullWidth variant="outlined" sx={TextFieldStyle} size="small">
+              <FormControl
+                fullWidth
+                variant="outlined"
+                sx={TextFieldStyle}
+                size="small"
+                error={!!errors.isp}
+              >
                 <InputLabel>ISP</InputLabel>
                 <Select
                   label="ISP"
                   value={isp}
-                  onChange={(e) => setIsp(e.target.value)}
+                  onChange={(e) => handleFieldChange('isp', e.target.value)}
                 >
-                  {
-                    allIsps.map((isp) => (
-                      <MenuItem key={isp.id} value={isp.id}>
-                        {isp.name}
-                      </MenuItem>
-                    ))
-                  }
+                  {allIsps.map((isp) => (
+                    <MenuItem key={isp.id} value={isp.id}>
+                      {isp.name}
+                    </MenuItem>
+                  ))}
                 </Select>
+                {errors.isp && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                    {errors.isp}
+                  </Typography>
+                )}
               </FormControl>
             </Grid>
-            
+
             <Grid item xs={6}>
-              <FormControl fullWidth variant="outlined" sx={TextFieldStyle} size="small">
-                <InputLabel color={colors.primary}>Package</InputLabel>
+              <FormControl
+                fullWidth
+                variant="outlined"
+                sx={TextFieldStyle}
+                size="small"
+                error={!!errors.userPackage}
+              >
+                <InputLabel>Package</InputLabel>
                 <Select
                   label="Package"
-                  labelId="area-select-label"
                   value={userPackage}
-                  onChange={(e) => setUserPackage(e.target.value)}
-                  size="small"
+                  onChange={(e) => handleFieldChange('userPackage', e.target.value)}
                 >
-                  {
-                    packages.length > 0 && packages.map((pkg) => (
-                      <MenuItem key={pkg.id} value={pkg.pkgName}>
-                        {pkg.pkgName}
-                      </MenuItem>
-                    ))
-                  }
+                  {packages.map((pkg) => (
+                    <MenuItem key={pkg.id} value={pkg.pkgName}>
+                      {pkg.pkgName}
+                    </MenuItem>
+                  ))}
                 </Select>
+                {errors.userPackage && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                    {errors.userPackage}
+                  </Typography>
+                )}
               </FormControl>
             </Grid>
             <Grid item xs={6}>
@@ -190,32 +351,26 @@ function AddCustomer() {
                 label="User Name"
                 name="userName"
                 value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-                required
-                sx={TextFieldStyle}
-                size="small"
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="CNIC"
-                name="cnic"
-                value={cnic}
-                onChange={(e) => setCnic(e.target.value)}
+                onChange={(e) => handleFieldChange('userName', e.target.value)}
+                error={!!errors.userName}
+                helperText={errors.userName}
                 required
                 sx={TextFieldStyle}
                 size="small"
               />
             </Grid>
           </Grid>
-          <Box display="flex" alignItems="center" justifyContent={"center"} mb={2}>
+          <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
             <Button
               variant="contained"
-              onClick={handleSubmit}
-              style={{ marginLeft: '10px', marginTop: 30, backgroundColor: colors.primary }}
+              type="submit"
+              style={{
+                marginLeft: '10px',
+                marginTop: 30,
+                backgroundColor: colors.primary,
+              }}
             >
-              Create Customer
+              {isSubmitting ? 'Creating...' : 'Create Customer'}
             </Button>
           </Box>
         </form>
