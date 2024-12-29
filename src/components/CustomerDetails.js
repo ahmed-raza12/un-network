@@ -27,7 +27,11 @@ import {
     DialogContent,
     DialogActions,
     DialogContentText,
-    TextField
+    TextField,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem
 } from '@mui/material';
 
 import {
@@ -40,6 +44,12 @@ import {
     Visibility as VisibilityIcon,
     Edit,
     Delete,
+    Close as CloseIcon,
+    Save as SaveIcon,
+    Cancel as CancelIcon,
+    Fingerprint,
+    Home,
+    CellTower,
     Save,
     Cancel
 } from '@mui/icons-material';
@@ -52,8 +62,8 @@ import { fetchInvoicesByCustomerUid } from '../store/actions/invoiceActions';
 import { updateCustomer, deleteCustomer } from '../store/actions/customerActions';
 import { useDispatch, useSelector } from 'react-redux';
 import { useReactToPrint } from 'react-to-print';
-import { PrintableInvoice } from './Invoice';
-import dealerReducer from '../store/reducers/dealerReducer';
+import { fetchPackages } from '../store/actions/packageActions';
+import { fetchISPs } from '../store/actions/ispActions';
 
 // Create a styled Tab component
 const StyledTab = styled(Tab)(({ theme }) => ({
@@ -67,7 +77,15 @@ function CustomerDetails() {
     const [tabValue, setTabValue] = useState(0);
     const [selectedInvoice, setSelectedInvoice] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [hasLoadedInvoices, setHasLoadedInvoices] = useState(false);
+
     const [editedCustomer, setEditedCustomer] = useState(null);
+    const allIsps = useSelector((state) => state.isp.isps);
+    console.log(allIsps, 'allIsps');
+    const selectedDealerId = useSelector((state) => state.auth.user.uid); // Or get from localStorage, etc.
+    const [packages, setPackages] = useState([]);
+    const [ispId, setIspId] = useState('');
+    const [ispName, setIspName] = useState('');
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const navigate = useNavigate();
     const { id } = useParams();
@@ -84,21 +102,46 @@ function CustomerDetails() {
     const printRef = useRef();
 
     useEffect(() => {
+        const localIsps = localStorage.getItem('ispsData');
+        if (localIsps) {
+            dispatch({
+                type: 'FETCH_ISPS_SUCCESS',
+                payload: JSON.parse(localIsps),
+            });
+        } else {
+            dispatch(fetchISPs(selectedDealerId));
+        }
+    }, [dispatch]);
+
+    useEffect(() => {
+        const loadPackages = async () => {
+            try {
+                const packagesData = ispId !== '' && await dispatch(fetchPackages(ispId));
+                console.log(packagesData, ispName, 'fetched packages');
+                // Convert packages object to array and add id to each package
+                const packagesArray = Object.entries(packagesData).map(([id, pkg]) => ({ ...pkg, id }));
+                setPackages(packagesArray);
+                console.log(packagesArray);
+            } catch (error) {
+                console.error('Error loading packages:', error);
+            } finally {
+            }
+        };
+        loadPackages();
+    }, [ispId, dispatch]);
+
+    useEffect(() => {
         if (customer) {
             setEditedCustomer({ ...customer });
         }
     }, [customer]);
 
     useEffect(() => {
-        if (customer?.id) {
+        if (tabValue === 1 && !hasLoadedInvoices && customer?.id) {
             dispatch(fetchInvoicesByCustomerUid(customer.id));
+            setHasLoadedInvoices(true);
         }
-    }, [dispatch, customer?.id]);
-
-    useEffect(() => {
-        dispatch(fetchInvoicesByCustomerUid(id));
-    }, [dispatch, id]);
-
+    }, [tabValue, hasLoadedInvoices, customer?.id, dispatch]);
     const handlePrint = useReactToPrint({
         content: () => printRef.current,
         documentTitle: `Invoice-${selectedInvoice?.invoiceNo || ''}`,
@@ -150,6 +193,7 @@ function CustomerDetails() {
     };
 
     const handleInputChange = (field) => (event) => {
+        console.log(field, 'field');
         setEditedCustomer({ ...editedCustomer, [field]: event.target.value });
     };
 
@@ -294,7 +338,6 @@ function CustomerDetails() {
                                         />
                                     )}
                                 </ListItem>
-
                                 <ListItem>
                                     <ListItemIcon>
                                         <Phone sx={{ color: 'darkblue' }} />
@@ -314,30 +357,28 @@ function CustomerDetails() {
                                         />
                                     )}
                                 </ListItem>
-
                                 <ListItem>
                                     <ListItemIcon>
-                                        <Badge sx={{ color: 'darkblue' }} />
+                                        <Home sx={{ color: 'darkblue' }} />
                                     </ListItemIcon>
                                     {isEditing ? (
                                         <TextField
                                             fullWidth
-                                            label="address"
+                                            label="Address"
                                             value={editedCustomer?.address || ''}
                                             onChange={handleInputChange('address')}
                                         />
                                     ) : (
                                         <ListItemText
-                                            primary="address"
+                                            primary="Address"
                                             secondary={customer?.address}
                                             secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
                                         />
                                     )}
                                 </ListItem>
-
                                 <ListItem>
                                     <ListItemIcon>
-                                        <Badge sx={{ color: 'darkblue' }} />
+                                        <Fingerprint sx={{ color: 'darkblue' }} />
                                     </ListItemIcon>
                                     {isEditing ? (
                                         <TextField
@@ -356,15 +397,32 @@ function CustomerDetails() {
                                 </ListItem>
                                 <ListItem>
                                     <ListItemIcon>
-                                        <Badge sx={{ color: 'darkblue' }} />
+                                        <CellTower sx={{ color: 'darkblue' }} />
                                     </ListItemIcon>
                                     {isEditing ? (
-                                        <TextField
-                                            fullWidth
-                                            label="ISP Name"
-                                            value={editedCustomer?.ispName || ''}
-                                            onChange={handleInputChange('ispName')}
-                                        />
+                                        <FormControl fullWidth variant="outlined" size="small">
+                                            <InputLabel>ISP</InputLabel>
+                                            <Select
+                                                label="ISP Name"
+                                                value={allIsps.find((isp) => isp.name === editedCustomer?.ispName) || customer?.ispName}
+                                                onChange={(e) => {
+                                                    const selectedIsp = e.target.value;
+                                                    setEditedCustomer({
+                                                        ...editedCustomer,
+                                                        ispName: selectedIsp.name,
+                                                        ispId: selectedIsp.id,
+                                                    });
+                                                    setIspId(selectedIsp.id);
+                                                }}
+                                                renderValue={(selected) => (selected ? selected.name : '')}
+                                            >
+                                                {allIsps.map((isp) => (
+                                                    <MenuItem key={isp.id} value={isp}>
+                                                        {isp.name}
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
                                     ) : (
                                         <ListItemText
                                             primary="ISP Name"
@@ -373,18 +431,31 @@ function CustomerDetails() {
                                         />
                                     )}
                                 </ListItem>
-
                                 <ListItem>
                                     <ListItemIcon>
                                         <Wallet sx={{ color: 'darkblue' }} />
                                     </ListItemIcon>
                                     {isEditing ? (
-                                        <TextField
-                                            fullWidth
-                                            label="Package"
-                                            value={editedCustomer?.package || ''}
-                                            onChange={handleInputChange('package')}
-                                        />
+                                        <FormControl fullWidth variant="outlined" size="small">
+                                            <InputLabel>Package</InputLabel>
+                                            <Select
+                                                label="Package"
+                                                value={editedCustomer?.package || customer?.package || ''}
+                                                onChange={(e) => {
+                                                    const selectedPackage = e.target.value;
+                                                    setEditedCustomer({
+                                                        ...editedCustomer,
+                                                        package: selectedPackage,
+                                                    });
+                                                }}
+                                            >
+                                                {packages.map((pkg) => (
+                                                    <MenuItem key={pkg.id} value={pkg.pkgName}>
+                                                        {pkg.pkgName}
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
                                     ) : (
                                         <ListItemText
                                             primary="Package"
@@ -397,62 +468,58 @@ function CustomerDetails() {
                         </Paper>
                     </Box>
                 </Box>
-            )}
-            {tabValue === 1 && (
-                <Box sx={{ mt: 3 }}>
-                    <TableContainer component={Paper} sx={{ mb: 3 }}>
-                        <Table>
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>Invoice No</TableCell>
-                                    <TableCell>Date</TableCell>
-                                    <TableCell>Package</TableCell>
-                                    <TableCell>charged By</TableCell>
-                                    <TableCell align="right">Amount</TableCell>
-                                    <TableCell align="right">Actions</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {invoices.map((invoice) => (
-                                    <TableRow key={invoice.id}>
-                                        <TableCell>{invoice.invoiceNumber}</TableCell>
-                                        <TableCell>{new Date(invoice.createdAt).toLocaleDateString()}</TableCell>
-                                        <TableCell>{invoice.package}</TableCell>
-                                        <TableCell>{invoice.chargedBy}</TableCell>
-                                        <TableCell align="right">Rs. {invoice.amount}</TableCell>
-                                        <TableCell align="right">
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => handleViewInvoice(invoice)}
-                                                sx={{ color: colors.primary }}
-                                            >
-                                                <VisibilityIcon />
-                                            </IconButton>
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => handlePrintInvoice(invoice)}
-                                                sx={{ color: colors.primary }}
-                                            >
-                                                <PrintIcon />
-                                            </IconButton>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                                {invoices.length === 0 && (
+            )
+            }
+            {
+                tabValue === 1 && (
+                    <Box sx={{ mt: 3 }}>
+                        <TableContainer component={Paper}>
+                            <Table sx={{ '& .MuiTableCell-root': { borderRight: '1px solid rgba(224, 224, 224, 1)' } }}>
+                                <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
                                     <TableRow>
-                                        <TableCell colSpan={5} align="center">
-                                            <Typography variant="body2" color="textSecondary">
-                                                No invoices found
-                                            </Typography>
-                                        </TableCell>
+                                        <TableCell>Invoice No</TableCell>
+                                        <TableCell>Date</TableCell>
+                                        <TableCell>Package</TableCell>
+                                        <TableCell>charged By</TableCell>
+                                        <TableCell align="right">Amount</TableCell>
+                                        <TableCell align="right">Actions</TableCell>
                                     </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                                </TableHead>
+                                <TableBody>
+                                    {invoices.map((invoice) => (
+                                        <TableRow key={invoice.id}>
+                                            <TableCell>{invoice.invoiceNumber}</TableCell>
+                                            <TableCell>{new Date(invoice.createdAt).toLocaleDateString()}</TableCell>
+                                            <TableCell>{invoice.package}</TableCell>
+                                            <TableCell>{invoice.chargedBy}</TableCell>
+                                            <TableCell align="right">Rs. {invoice.amount}</TableCell>
+                                            <TableCell align="right">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => handleViewInvoice(invoice)}
+                                                    sx={{ color: colors.primary }}
+                                                >
+                                                    <VisibilityIcon />
+                                                </IconButton>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                    {invoices.length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={5} align="center">
+                                                <Typography variant="body2" color="textSecondary">
+                                                    No invoices found
+                                                </Typography>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
 
-                </Box>
-            )}
+                    </Box>
+                )
+            }
             {/* Pagination */}
             {/* <Box display="flex" justifyContent="center" mt={2}>
                 <Pagination
@@ -486,7 +553,7 @@ function CustomerDetails() {
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Box>
+        </Box >
     );
 }
 

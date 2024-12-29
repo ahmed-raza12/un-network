@@ -33,12 +33,18 @@ import {
 import {
     Phone,
     Person,
-    Badge,
+    Work,
+    Home,
+    Email,
+    Business,
     Edit,
     Save,
     Cancel,
-    Delete
+    PictureAsPdf,
+    Delete,
+    FileDownload
 } from '@mui/icons-material';
+
 import colors from '../colors';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -48,7 +54,7 @@ import { fetchTodayInvoicesByStaff } from '../store/actions/reportActions';
 
 
 const StyledTab = styled(Tab)(({ theme }) => ({
-    '&.Mui-selected': { 
+    '&.Mui-selected': {
         background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`,
         color: 'white',
     },
@@ -150,6 +156,110 @@ const StaffProfile = () => {
         setOpenDeleteDialog(false);
     };
 
+    const exportToCSV = () => {
+        const headers = ['Invoice No,Customer Id,Customer Name,Time,Amount'];
+        const data = todayInvoices.map(invoice => {
+            return `${invoice.invoiceNumber || 'N/A'},${invoice.userName || 'N/A'},${invoice.customerName || 'N/A'},${invoice.createdAt ? new Date(invoice.createdAt).toLocaleTimeString() : 'N/A'},${invoice.amount || 0}`;
+        });
+
+        const csvContent = [headers, ...data].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', `${staffMember.name}_invoices_${new Date().toLocaleDateString()}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // Function to generate PDF
+    const exportToPDF = () => {
+        const printWindow = window.open('', '_blank');
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Invoices Report</title>
+                <style>
+body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { color: #333; }
+            .summary { 
+              margin: 20px 0;
+              padding: 15px;
+              background: #f5f5f5;
+              border-radius: 4px;
+            }
+            table { 
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 20px;
+            }
+            th, td { 
+              border: 1px solid #ddd;
+              padding: 8px;
+              text-align: left;
+            }
+            th { 
+              background-color: #f5f5f5;
+            }
+            .text-right {
+              text-align: right;
+            }
+            @media print {
+              button { display: none; }
+              body { padding: 0; }
+            }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h2>Invoices Report</h2>
+                    <p>Staff Member: ${staffMember.name}</p>
+                    <p>Date: ${new Date().toLocaleDateString()}</p>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Invoice No</th>
+                            <th>Customer Id</th>
+                            <th>Customer Name</th>
+                            <th>Time</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${todayInvoices.map(invoice => `
+                            <tr>
+                                <td>${invoice.invoiceNumber || 'N/A'}</td>
+                                <td>${invoice.userName || 'N/A'}</td>
+                                <td>${invoice.customerName || 'N/A'}</td>
+                                <td>${invoice.createdAt ? new Date(invoice.createdAt).toLocaleTimeString() : 'N/A'}</td>
+                                <td>Rs. ${invoice.amount || 0}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4">Total Invoices: ${totalInvoices}</td>
+                            <td>Total Amount: Rs. ${totalAmount}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+          <button onclick="window.print(); window.close();" 
+                  style="margin-top: 20px; padding: 10px 20px; cursor: pointer;">
+            Print Report
+          </button>
+            </body>
+            </html>
+        `;
+
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+
+    };
     return (
         <Container maxWidth="md" sx={{ minHeight: '100vh', }}>
             <Box sx={{ display: 'flex', gap: 20, p: 4 }}>
@@ -309,7 +419,7 @@ const StaffProfile = () => {
 
                                 <ListItem>
                                     <ListItemIcon>
-                                        <Badge sx={{ color: colors.primary }} />
+                                        <Work sx={{ color: colors.primary }} />
                                     </ListItemIcon>
                                     {isEditing ? (
                                         <TextField
@@ -328,9 +438,10 @@ const StaffProfile = () => {
                                         />
                                     )}
                                 </ListItem>
+
                                 <ListItem>
                                     <ListItemIcon>
-                                        <Badge sx={{ color: colors.primary }} />
+                                        <Home sx={{ color: colors.primary }} />
                                     </ListItemIcon>
                                     {isEditing ? (
                                         <TextField
@@ -349,9 +460,10 @@ const StaffProfile = () => {
                                         />
                                     )}
                                 </ListItem>
+
                                 <ListItem>
                                     <ListItemIcon>
-                                        <Badge sx={{ color: colors.primary }} />
+                                        <Email sx={{ color: colors.primary }} />
                                     </ListItemIcon>
                                     {isEditing ? (
                                         <TextField
@@ -371,9 +483,10 @@ const StaffProfile = () => {
                                         />
                                     )}
                                 </ListItem>
+
                                 <ListItem>
                                     <ListItemIcon>
-                                        <Badge sx={{ color: colors.primary }} />
+                                        <Business sx={{ color: colors.primary }} />
                                     </ListItemIcon>
                                     {isEditing ? (
                                         <TextField
@@ -406,42 +519,74 @@ const StaffProfile = () => {
                                 No invoices found for today.
                             </Typography>
                         ) : (
-                            <TableContainer component={Paper}>
-                                <Table>
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>Invoice No</TableCell>
-                                            <TableCell>Time</TableCell>
-                                            <TableCell align="right">Amount</TableCell>
+                            <Paper>
+                                <Box sx={{ mb: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                                    <Button
+                                        variant="contained"
+                                        startIcon={<FileDownload />}
+                                        onClick={exportToCSV}
+                                        sx={{
+                                            bgcolor: colors.primary,
+                                            '&:hover': { bgcolor: colors.secondary },
+                                            borderRadius: '25px'
+                                        }}
+                                    >
+                                        Export CSV
+                                    </Button>
+                                    <Button
+                                        variant="contained"
+                                        startIcon={<PictureAsPdf />}
+                                        onClick={exportToPDF}
+                                        sx={{
+                                            bgcolor: colors.primary,
+                                            '&:hover': { bgcolor: colors.secondary },
+                                            borderRadius: '25px'
+                                        }}
+                                    >
+                                        Download PDF
+                                    </Button>
+                                </Box>
+                                <TableContainer component={Paper}>
+                                    <Table>
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell>Invoice No</TableCell>
+                                                <TableCell>Customer Id</TableCell>
+                                                <TableCell>Customer Name</TableCell>
+                                                <TableCell>Time</TableCell>
+                                                <TableCell align="right">Amount</TableCell>
 
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {todayInvoices.map((invoice) => (
-                                            <TableRow key={invoice.id}>
-                                                <TableCell>{invoice.invoiceNumber || 'N/A'}</TableCell>
-                                                <TableCell>
-                                                    {invoice.createdAt ?
-                                                        new Date(invoice.createdAt).toLocaleTimeString() :
-                                                        'N/A'
-                                                    }
-                                                </TableCell>
-                                                {/* <TableCell>{invoice.customerName || 'N/A'}</TableCell> */}
-                                                {/* <TableCell>{invoice.ispName || 'N/A'}</TableCell> */}
-                                                <TableCell align="right">Rs. {invoice.amount || 0}</TableCell>
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                    <TableFooter>
-                                        <TableRow>
-                                            <TableCell>Total Invoices: {totalInvoices}</TableCell>
-                                            <TableCell></TableCell>
-                                            <TableCell align="right">Total Amount: Rs. {totalAmount}</TableCell>
-                                        </TableRow>
-                                    </TableFooter>
+                                        </TableHead>
+                                        <TableBody>
+                                            {todayInvoices.map((invoice) => (
+                                                <TableRow key={invoice.id}>
+                                                    <TableCell>{invoice.invoiceNumber || 'N/A'}</TableCell>
+                                                    <TableCell>{invoice.userName || 'N/A'}</TableCell>
+                                                    <TableCell>{invoice.customerName || 'N/A'}</TableCell>
+                                                    <TableCell>
+                                                        {invoice.createdAt ?
+                                                            new Date(invoice.createdAt).toLocaleTimeString() :
+                                                            'N/A'
+                                                        }
+                                                    </TableCell>
+                                                    <TableCell align="right">Rs. {invoice.amount || 0}</TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                        <TableFooter>
+                                            <TableRow>
+                                                <TableCell>Total Invoices: {totalInvoices}</TableCell>
+                                                <TableCell></TableCell>
+                                                <TableCell></TableCell>
+                                                <TableCell></TableCell>
+                                                <TableCell align="right">Total Amount: Rs. {totalAmount}</TableCell>
+                                            </TableRow>
+                                        </TableFooter>
 
-                                </Table>
-                            </TableContainer>
+                                    </Table>
+                                </TableContainer>
+                            </Paper>
                         )}
                 </Box>
             </Box>

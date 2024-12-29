@@ -154,7 +154,7 @@ const PkgDetails = () => {
                                 {pkg.pkgName}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                                Sale Price: ${pkg.salePrice}
+                                Sale Price: Rs.{pkg.salePrice}
                             </Typography>
                         </Box>
                         <Box>

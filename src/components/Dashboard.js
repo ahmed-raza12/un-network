@@ -43,7 +43,7 @@ function Dashboard() {
                     
                     { label: 'Customers', icon: <PeopleIcon fontSize="large" />, route: '/customers' },
                     { label: 'Staff', icon: <Groups2 fontSize="large" />, route: '/staff' },
-                    { label: 'Add Customer', icon: <PersonAddIcon fontSize="large" />, path: '/add-customer'},
+                    { label: 'Add Customer', icon: <PersonAddIcon fontSize="large" />, route: '/add-customer'},
                     { label: 'Reports', icon: <TableChart fontSize="large" />, route: '/reports' },
                     { label: 'Slips', icon: <AddCircle fontSize="large" />, route: '/slips' },
                     { label: 'Manual Slip', icon: <Receipt fontSize="large" />, route: '/manual-slip' },

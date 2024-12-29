@@ -34,26 +34,32 @@ import ReceiptScreen from './components/SlipView';
 
 // Initialize Firebase
 initializeApp(firebaseConfig);
+const useTabCloseHandler = () => {
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      // Cancel the event to show confirmation dialog
+      event.preventDefault();
+      // Chrome requires returnValue to be set
+      event.returnValue = '';
+      
+      // Clear localStorage
+      localStorage.clear();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+};
+
 
 const App = () => {
   const dispatch = useDispatch();
   const isLoggedIn = useSelector(state => state.auth.isLoggedIn); // Get login status from Redux state
- 
-  useEffect(() => {
-    const clearLocalStorage = () => {
-      // Clear all the keys you used for storing data
-      localStorage.clear();
-    };
 
-    // Add the event listener
-    window.addEventListener('beforeunload', clearLocalStorage);
-
-    // Clean up the event listener on unmount
-    return () => {
-      window.removeEventListener('beforeunload', clearLocalStorage);
-    };
-  }, []);
-
+  useTabCloseHandler();
   const handleLogout = () => {
     dispatch(logout()); // Dispatch logout action
     // Optionally, you can also sign out from Firebase

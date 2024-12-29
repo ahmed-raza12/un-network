@@ -32,6 +32,11 @@ import {
     Person,
     Badge,
     Wallet,
+    Email,
+    AccountCircle,
+    Public,
+    LocationCity,
+    Cancel,
     // ReceiptIcon,
     CalendarToday,
     AddIcCallOutlined
@@ -44,7 +49,7 @@ import { fetchPackages } from '../store/actions/packageActions';
 
 // Create a styled Tab component
 const StyledTab = styled(Tab)(({ theme }) => ({
-    '&.Mui-selected': { 
+    '&.Mui-selected': {
         background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`,
         color: 'white', // Active tab label color
     },
@@ -97,7 +102,7 @@ function ISPDetails() {
             state: {
                 pkg: {
                     id: pkg.id,
-                    ispId: isp.id, 
+                    ispId: isp.id,
                     pkgName: pkg.pkgName,
                     salePrice: pkg.salePrice,
                     status: pkg.status || 'Active'
@@ -191,7 +196,7 @@ function ISPDetails() {
             >
                 <StyledTab label="Profile" />
                 <StyledTab label="Packages" />
-                <StyledTab label="Import Users" />
+                {/* <StyledTab label="Import Users" /> */}
             </Tabs>
 
             {tabValue === 0 && (
@@ -218,6 +223,17 @@ function ISPDetails() {
                         >
                             {isEditing ? 'Save Changes' : 'Edit ISP'}
                         </Button>
+                        {
+                            isEditing && (
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<Cancel />}
+                                    onClick={() => setIsEditing(false)}
+                                >
+                                    Cancel
+                                </Button>
+                            )
+                        }
                         <Button
                             variant="contained"
                             color="error"
@@ -240,7 +256,7 @@ function ISPDetails() {
                                 <List>
                                     <ListItem>
                                         <ListItemIcon>
-                                            <Phone sx={{ color: 'darkblue' }} />
+                                            <AccountCircle sx={{ color: 'darkblue' }} />
                                         </ListItemIcon>
                                         {isEditing ? (
                                             <TextField
@@ -253,7 +269,7 @@ function ISPDetails() {
                                             />
                                         ) : (
                                             <ListItemText
-                                                primary={"Name"}
+                                                primary="Name"
                                                 secondary={isp.name}
                                                 secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
                                             />
@@ -261,7 +277,7 @@ function ISPDetails() {
                                     </ListItem>
                                     <ListItem>
                                         <ListItemIcon>
-                                            <AddIcCallOutlined sx={{ color: 'darkblue' }} />
+                                            <Email sx={{ color: 'darkblue' }} />
                                         </ListItemIcon>
                                         {isEditing ? (
                                             <TextField
@@ -282,7 +298,7 @@ function ISPDetails() {
                                     </ListItem>
                                     <ListItem>
                                         <ListItemIcon>
-                                            <Badge sx={{ color: 'darkblue' }} />
+                                            <Public sx={{ color: 'darkblue' }} />
                                         </ListItemIcon>
                                         {isEditing ? (
                                             <TextField
@@ -296,14 +312,14 @@ function ISPDetails() {
                                         ) : (
                                             <ListItemText
                                                 primary="Country"
-                                                secondary={isp.city}
+                                                secondary={isp.country}
                                                 secondaryTypographyProps={{ color: 'darkblue', fontWeight: 'bold' }}
                                             />
                                         )}
                                     </ListItem>
                                     <ListItem>
                                         <ListItemIcon>
-                                            <Badge sx={{ color: 'darkblue' }} />
+                                            <LocationCity sx={{ color: 'darkblue' }} />
                                         </ListItemIcon>
                                         {isEditing ? (
                                             <TextField
@@ -322,7 +338,6 @@ function ISPDetails() {
                                             />
                                         )}
                                     </ListItem>
-
                                 </List>
                             </Paper>
                         </Box>
@@ -385,7 +400,7 @@ function ISPDetails() {
                                                     {pkg.pkgName}
                                                 </Typography>
                                                 <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                                                    ${pkg.salePrice}
+                                                    Rs.{pkg.salePrice}
                                                 </Typography>
                                                 {/* <Chip
                                                     label={pkg.status || 'Active'}
@@ -407,10 +422,10 @@ function ISPDetails() {
             }
 
             {/* Pagination */}
-            {
+            {/* {
                 tabValue === 2 && (
                     <Box display="flex" justifyContent="center" mt={2}>
-                        {/* <Pagination
+                        <Pagination
                             count={1}
                             variant="outlined"
                             shape="rounded"
@@ -421,10 +436,10 @@ function ISPDetails() {
                                     height: { xs: 30, sm: 40 },
                                 }
                             }}
-                        /> */}
+                        />
                     </Box>
                 )
-            }
+            } */}
 
             {/* Delete Confirmation Dialog */}
             <Dialog

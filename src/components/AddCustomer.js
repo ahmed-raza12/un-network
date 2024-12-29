@@ -11,15 +11,15 @@ function AddCustomer() {
   // Existing state declarations
   const [fullName, setFullName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phone, setPhoneNumber] = useState('');
   const [address, setAddress] = useState('');
   const [userPackage, setUserPackage] = useState('');
-  const [subArea, setSubArea] = useState('');
-  const [isp, setIsp] = useState('');
+  const [ispName, setIspName] = useState('');
+  const [ispId, setIspId] = useState('');
   const [packageType, setPackageType] = useState('');
   const [amountPaid, setAmountPaid] = useState('');
   const [userName, setUserName] = useState('');
-  const [cnic, setCnic] = useState('');
+  const [CNIC, setCnic] = useState('');
 
   // Add validation states
   const [errors, setErrors] = useState({});
@@ -40,8 +40,8 @@ function AddCustomer() {
     const loadPackages = async () => {
       setLoading(true);
       try {
-        const packagesData = isp !== '' && await dispatch(fetchPackages(isp));
-        console.log(packagesData, isp, 'fetched packages');
+        const packagesData = ispId !== '' && await dispatch(fetchPackages(ispId));
+        console.log(packagesData, ispName, 'fetched packages');
         // Convert packages object to array and add id to each package
         const packagesArray = Object.entries(packagesData).map(([id, pkg]) => ({ ...pkg, id }));
         setPackages(packagesArray);
@@ -54,7 +54,7 @@ function AddCustomer() {
       }
     };
     loadPackages();
-  }, [isp, dispatch]);
+  }, [ispId, dispatch]);
 
   const isLoading = useSelector((state) => state.isp.loading);
 
@@ -77,7 +77,7 @@ function AddCustomer() {
       case 'fullName':
       case 'lastName':
         return value.trim() ? '' : 'This field is required';
-      case 'phoneNumber':
+      case 'phone':
         const phoneRegex = /^(\+92|0)?[0-9]{10}$/;
         if (!value.trim()) return 'Phone number is required';
         if (!phoneRegex.test(value.replace(/\s/g, ''))) {
@@ -93,7 +93,7 @@ function AddCustomer() {
           return 'Username must be 3-20 characters and can only contain letters, numbers, underscores, and hyphens';
         }
         return '';
-      case 'cnic':
+      case 'CNIC':
         const cnicRegex = /^\d{5}-\d{7}-\d{1}$/;
         if (!value.trim()) return 'CNIC is required';
         if (!cnicRegex.test(value)) {
@@ -113,16 +113,17 @@ function AddCustomer() {
   const handleFieldChange = (name, value) => {
     const fieldSetters = {
       fullName: setFullName,
-      phoneNumber: setPhoneNumber,
+      phone: setPhoneNumber,
       address: setAddress,
       userName: setUserName,
-      cnic: setCnic,
-      isp: setIsp,
+      CNIC: setCnic,
+      ispName: setIspName,
+      ispId: setIspId,
       userPackage: setUserPackage,
     };
 
     fieldSetters[name](value);
-
+    console.log(value, name);
     // Validate field and update errors
     const fieldError = validateField(name, value);
     setErrors(prev => ({
@@ -141,7 +142,7 @@ function AddCustomer() {
       } else if (value.length > 12) {
         value = `${value.slice(0, 5)}-${value.slice(5, 12)}-${value.slice(12)}`;
       }
-      handleFieldChange('cnic', value);
+      handleFieldChange('CNIC', value);
     }
   };
 
@@ -149,11 +150,11 @@ function AddCustomer() {
   const validateForm = () => {
     const fields = {
       fullName,
-      phoneNumber,
+      phone,
       address,
       userName,
-      cnic,
-      isp,
+      CNIC,
+      ispName,
       userPackage,
     };
 
@@ -175,46 +176,47 @@ function AddCustomer() {
     setIsSubmitting(true);
 
     if (!validateForm()) {
-        setSubmitError('Please fix the errors before submitting.');
-        setIsSubmitting(false);
-        return;
+      setSubmitError('Please fix the errors before submitting.');
+      setIsSubmitting(false);
+      return;
     }
 
     if (role === 'admin' && !selectedDealerId) {
-        setSubmitError('Please select a dealer first.');
-        setIsSubmitting(false);
-        return;
+      setSubmitError('Please select a dealer first.');
+      setIsSubmitting(false);
+      return;
     }
 
     try {
-        const customerData = {
-            fullName,
-            lastName,
-            phoneNumber,
-            address,
-            userPackage,
-            isp,
-            userName,
-            cnic,
-        };
+      const customerData = {
+        fullName,
+        lastName,
+        phone,
+        address,
+        package: userPackage,
+        ispName,
+        userName,
+        CNIC,
+      };
 
-        await dispatch(addCustomer(customerData, selectedDealerId));
+      await dispatch(addCustomer(customerData, selectedDealerId));
 
-        // Clear form after successful submission
-        setFullName('');
-        setPhoneNumber('');
-        setAddress('');
-        setUserPackage('');
-        setIsp('');
-        setUserName('');
-        setCnic('');
-        setErrors({});
+      // Clear form after successful submission
+      setFullName('');
+      setPhoneNumber('');
+      setAddress('');
+      setUserPackage('');
+      setIspName('');
+      setIspId('');
+      setUserName('');
+      setCnic('');
+      setErrors({});
     } catch (error) {
-        setSubmitError(error.message || 'Failed to create customer. Please try again.');
+      setSubmitError(error.message || 'Failed to create customer. Please try again.');
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
-};
+  };
 
   // Keep existing useEffect hooks...
 
@@ -251,11 +253,11 @@ function AddCustomer() {
               <TextField
                 fullWidth
                 label="Phone Number"
-                name="phoneNumber"
-                value={phoneNumber}
-                onChange={(e) => handleFieldChange('phoneNumber', e.target.value)}
-                error={!!errors.phoneNumber}
-                helperText={errors.phoneNumber}
+                name="phone"
+                value={phone}
+                onChange={(e) => handleFieldChange('phone', e.target.value)}
+                error={!!errors.phone}
+                helperText={errors.phone}
                 required
                 sx={TextFieldStyle}
                 size="small"
@@ -275,16 +277,16 @@ function AddCustomer() {
                 size="small"
               />
             </Grid>
-            
+
             <Grid item xs={6}>
               <TextField
                 fullWidth
                 label="CNIC"
-                name="cnic"
-                value={cnic}
+                name="CNIC"
+                value={CNIC}
                 onChange={handleCnicChange}
-                error={!!errors.cnic}
-                helperText={errors.cnic || 'Format: 12345-1234567-1'}
+                error={!!errors.CNIC}
+                helperText={errors.CNIC || 'Format: 12345-1234567-1'}
                 required
                 sx={TextFieldStyle}
                 size="small"
@@ -300,12 +302,17 @@ function AddCustomer() {
               >
                 <InputLabel>ISP</InputLabel>
                 <Select
-                  label="ISP"
-                  value={isp}
-                  onChange={(e) => handleFieldChange('isp', e.target.value)}
+                  label="ISP Name"
+                  value={allIsps.find((isp) => isp.name === ispName) || ''} // Set the value based on the selected object
+                  onChange={(e) => {
+                    const selectedIsp = e.target.value;
+                    handleFieldChange('ispName', selectedIsp.name);
+                    handleFieldChange('ispId', selectedIsp.id);
+                  }}
+                  renderValue={(selected) => (selected ? selected.name : '')} // Display only the name in the field
                 >
                   {allIsps.map((isp) => (
-                    <MenuItem key={isp.id} value={isp.id}>
+                    <MenuItem key={isp.id} value={isp}>
                       {isp.name}
                     </MenuItem>
                   ))}
@@ -375,7 +382,7 @@ function AddCustomer() {
           </Box>
         </form>
       </Paper>
-    </Box>
+    </Box >
   );
 }
 

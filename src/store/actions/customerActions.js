@@ -44,15 +44,18 @@ export const getPaginatedData = (allCustomers = [], page, searchQuery = '') => {
     };
 };
 
+
 export const searchCustomers = (searchQuery, dealerId) => async (dispatch) => {
     console.log('searchQuery:', searchQuery, 'dealerId:', dealerId);
     try {
         // Reference to customers for this dealer
         const customersRef = ref(db, `customers/${dealerId}`);
-        // Create search queries for different fields
+
+        // Create search queries for different fields (e.g., userName and phoneNumber)
         const searchQueries = [
             query(customersRef, orderByChild('userName'), equalTo(searchQuery)),
-            // query(customersRef, orderByChild('fullName'), equalTo(searchQuery))
+            query(customersRef, orderByChild('phone'), equalTo(searchQuery)), // Add phone number search
+            query(customersRef, orderByChild('CNIC'), equalTo(searchQuery)), // Add phone number search
         ];
         console.log(searchQueries, searchQuery, 'searchQueries');
 
@@ -91,6 +94,7 @@ export const searchCustomers = (searchQuery, dealerId) => async (dispatch) => {
         });
     }
 };
+
 
 export const deleteCustomers = (customerIds, dealerId) => async (dispatch) => {
     console.log('Deleting customers:', customerIds);

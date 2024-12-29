@@ -36,7 +36,6 @@ const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
                     color: green[700],
                     mt: 1,
                 }}>
-
                     <Typography variant="body2" color="textPrimary"> {new Date(receiptData.date).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' })}</Typography>
                 </Box>
             </Box>
@@ -104,12 +103,32 @@ const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
                     {new Date(receiptData.month).toLocaleString('default', { month: 'long' })}
                 </Typography>
             </Grid>
+            <Grid container justifyContent="space-between" mb={1}>
+                <Typography variant="body2" color="#6b49e4">
+                    Time
+                </Typography>
+                <Typography variant="body2" color="textPrimary">
+                    {receiptData.time
+                        ? receiptData.time.split(':').slice(0, 2).join(':') + ' ' + receiptData.time.split(' ')[1]
+                        : 'N/A'}
+                </Typography>
+            </Grid>
+            <Grid container justifyContent="space-between" mb={1}>
+                <Typography variant="body2" color="#6b49e4">
+                    Phone
+                </Typography>
+                <Typography variant="body2" color="textPrimary">
+                    {receiptData.phone1}
+                    {receiptData.userPhone && `, ${receiptData.userPhone}`}
+                </Typography>
+            </Grid>
         </Paper>
     </div>
 ));
 
 const Slips = () => {
     const [date, setDate] = useState(new Date().toLocaleString('default', { month: 'short', day: 'numeric', year: 'numeric' }));
+    const [time, setTime] = useState(new Date().toLocaleTimeString());
     const [userName, setUserName] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [customerId, setCustomerId] = useState('');
@@ -121,7 +140,7 @@ const Slips = () => {
     const [address, setAddress] = useState('');
     const [phone, setPhone] = useState('');
     const chargedBy = useSelector((state) => state.auth.user.name);
-
+    const userPhone = useSelector((state) => state.auth.user.phone);
     const [error, setError] = useState('');
     const [fieldErrors, setFieldErrors] = useState({});
 
@@ -257,6 +276,7 @@ const Slips = () => {
         const invoiceData = {
             invoiceNumber: currentInvoiceNumber,
             date,
+            time,
             chargedBy,
             userName,
             customerId,
@@ -271,8 +291,8 @@ const Slips = () => {
             phone
         };
 
-        dispatch(createInvoice(invoiceData, userId))
-            .then(() => fetchLatestInvoiceNumber())
+        // dispatch(createInvoice(invoiceData, userId))
+        //     .then(() => fetchLatestInvoiceNumber(), clearCustomerDetails())
         handlePrint();
     };
 
@@ -287,6 +307,8 @@ const Slips = () => {
         amount,
         month,
         address,
+        userPhone,
+        time,
         phone
     };
 
@@ -354,7 +376,7 @@ const Slips = () => {
                                     console.log(e.target.value); // Log the value to debug
                                     setMonth(e.target.value);
                                 }}
-                                                                fullWidth
+                                fullWidth
                                 InputLabelProps={{ shrink: true }}
                                 sx={{ mb: 2 }}
                             />
@@ -450,14 +472,22 @@ const Slips = () => {
                             />
                         </Grid>
                     </Grid>
-
+                    <Grid item xs={12} sm={6}>
+                        <TextField
+                            label="phone"
+                            value={userPhone}
+                            fullWidth
+                            sx={{ mb: 2 }}
+                        />
+                    </Grid>
+                    {/* </Grid> */}
                     <Grid item xs={12}>
                         <Button
                             type="submit"
                             variant="contained"
-                            color="primary"
                             fullWidth
                             size="large"
+                            sx={{ mt: 2, bgcolor: colors.secondary }}
                         // disabled={isLoading || Object.keys(fieldErrors).length > 0}
                         >
                             Generate Receipt

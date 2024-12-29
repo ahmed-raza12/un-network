@@ -9,6 +9,7 @@ import {
   TableBody,
   TableCell,
   TableContainer,
+  Stack,
   TableHead,
   TableRow,
   TextField,
@@ -16,6 +17,7 @@ import {
   CircularProgress,
   Alert
 } from '@mui/material';
+import { FileDownload, PictureAsPdf } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchInvoicesByDateRange, fetchInvoicesByDateRanges } from '../store/actions/reportActions';
 import generateTestInvoices from '../utils/generateTestInvoices';
@@ -29,7 +31,6 @@ function Report() {
   const [staffItem, setStaffItem] = useState('all');
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
-  // const [dealerId, setDealerId] = useState('');
   const dealerId = useSelector((state) => state.auth.user.uid);
   const [isLoading, setIsLoading] = useState(false);
   const dealers = useSelector((state) => state.dealers?.dealers);
@@ -38,15 +39,24 @@ function Report() {
   const isAdmin = user.role === 'admin';
   const isDealer = user.role === 'dealer';
   const { invoices = [], loading, error: invoiceError } = useSelector((state) => state.report);
-  console.log(staffItem, 'staff');
 
+  // Add summary calculation
+  const summary = React.useMemo(() => {
+    if (!invoices.length) return null;
+
+    return {
+      totalInvoices: invoices.length,
+      totalAmount: invoices.reduce((sum, invoice) => sum + (Number(invoice?.amount) || 0), 0).toLocaleString(),
+      averageAmount: (invoices.reduce((sum, invoice) => sum + (Number(invoice?.amount) || 0), 0) / invoices.length).toLocaleString(),
+      uniqueCustomers: new Set(invoices.map(invoice => invoice?.customerName)).size
+    };
+  }, [invoices]);
 
   useEffect(() => {
     const fetchStaffData = async () => {
       setIsLoading(true);
       try {
         if (isDealer) {
-          console.log(dealerId, 'dealerId');
           await dispatch(fetchStaff());
         } else {
           await dispatch(fetchStaff());
@@ -67,50 +77,196 @@ function Report() {
     }
 
     try {
-      // Format the start and end dates
       const start = new Date(startDate);
       const end = new Date(endDate);
+      const formattedStartDate = start.toISOString().split('T')[0];
+      const formattedEndDate = end.toISOString().split('T')[0];
 
-      // Format the start and end dates as 'YYYY-MM-DD'
-      const formattedStartDate = start.toISOString().split('T')[0]; // 'YYYY-MM-DD'
-      const formattedEndDate = end.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+      await dispatch(fetchInvoicesByDateRanges(user.uid, formattedStartDate, formattedEndDate, staffItem))
+      setError(null);
 
-
-      // Fetch invoices from Firebase
-      console.log(user, 'user');
-      console.log(dealerId, 'dealerId');
-      console.log(formattedStartDate, formattedEndDate, 'date');
-      // Wait for the invoices to be fetched before proceeding
-      await dispatch(fetchInvoicesByDateRanges(user.uid, formattedStartDate, formattedEndDate, staffItem));
-
-      // If invoices are fetched successfully
-      // console.log('Invoices fetched successfully');
     } catch (error) {
-      // Handle any errors that occur during the fetch
       console.error('Error fetching invoices:', error);
       setError(error.message || "Error fetching invoices.");
     }
   };
+  const exportToCSV = () => {
+    if (!invoices.length) return;
 
+    const headers = [
+      'Invoice No',
+      'Customer ID',
+      'Date',
+      'Time',
+      'Customer',
+      'Address',
+      'Package',
+      'Charged By',
+      'Amount'
+    ];
 
-  const handleGenerateTestData = async () => {
-    setGenerating(true);
-    try {
-      await generateTestInvoices(dispatch);
-      setError(null);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setGenerating(false);
-    }
+    const data = invoices.map(invoice => [
+      invoice?.invoiceNumber || 'N/A',
+      invoice?.userName || 'N/A',
+      invoice?.date ? new Date(invoice.date).toLocaleDateString() : 'N/A',
+      invoice?.time || 'N/A',
+      invoice?.customerName || 'N/A',
+      invoice?.address || 'N/A',
+      invoice?.package || 'N/A',
+      invoice?.chargedBy || 'N/A',
+      invoice?.amount || 0
+    ]);
+
+    // Add BOM for Excel to properly recognize UTF-8
+    const BOM = "\uFEFF";
+    const csvContent = BOM + [
+      headers.join(','),
+      ...data.map(row =>
+        row.map(cell =>
+          // Handle cells that contain commas by wrapping in quotes
+          typeof cell === 'string' && cell.includes(',') ?
+            `"${cell}"` : cell
+        ).join(',')
+      )
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `invoice_report_${startDate}_${endDate}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const exportToPDF = () => {
+    if (!invoices.length) return;
+
+    // Create a new window for printing
+    const printWindow = window.open('', '', 'height=600,width=800');
+
+    // Generate the HTML content
+    const content = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Invoice Report</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { color: #333; }
+            .summary { 
+              margin: 20px 0;
+              padding: 15px;
+              background: #f5f5f5;
+              border-radius: 4px;
+            }
+            table { 
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 20px;
+            }
+            th, td { 
+              border: 1px solid #ddd;
+              padding: 8px;
+              text-align: left;
+            }
+            th { 
+              background-color: #f5f5f5;
+            }
+            .text-right {
+              text-align: right;
+            }
+            @media print {
+              button { display: none; }
+              body { padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Invoice Report</h1>
+          <div class="summary">
+            <p><strong>Date Range:</strong> ${startDate} to ${endDate}</p>
+            <p><strong>Total Invoices:</strong> ${summary?.totalInvoices || 0}</p>
+            <p><strong>Total Amount:</strong> Rs. ${summary?.totalAmount || 0}</p>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Invoice No</th>
+                <th>Customer ID</th>
+                <th>Customer</th>
+                <th>Time</th>
+                <th>Date</th>
+                <th>Package</th>
+                <th>Charged By</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${invoices.map(invoice => `
+                <tr>
+                    <td>${invoice.invoiceNumber || 'N/A'}</td>
+                    <td>${invoice.userName || 'N/A'}</td>
+                    <td>${invoice.customerName || 'N/A'}</td>
+                    <td>
+                        ${invoice.time
+        ? invoice.time.split(':').slice(0, 2).join(':') + ' ' + invoice.time.split(' ')[1]
+        : 'N/A'}
+                  </td>
+                    <td>${invoice.date ? new Date(invoice.date).toLocaleDateString() : 'N/A'}</td>
+                    <td>${invoice.package || 'N/A'}</td>
+                    <td>${invoice.chargedBy || 'N/A'}</td>
+                    <td>Rs. ${invoice.amount || 0}</td>                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <button onclick="window.print(); window.close();" 
+                  style="margin-top: 20px; padding: 10px 20px; cursor: pointer;">
+            Print Report
+          </button>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(content);
+    printWindow.document.close();
   };
 
   return (
     <Box sx={{ padding: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Invoice Report
-      </Typography>
-
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" color={colors.secondary} gutterBottom>
+          Invoice Report
+        </Typography>
+        <Stack direction="row" spacing={2}>
+          <Button
+            variant="contained"
+            startIcon={<FileDownload />}
+            onClick={exportToCSV}
+            disabled={!invoices.length || loading}
+            sx={{
+              backgroundColor: colors.secondary,
+              '&:hover': { backgroundColor: colors.primary }
+            }}
+          >
+            Export CSV
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<PictureAsPdf />}
+            onClick={exportToPDF}
+            disabled={!invoices.length || loading}
+            sx={{
+              backgroundColor: colors.secondary,
+              '&:hover': { backgroundColor: colors.primary }
+            }}
+          >
+            Print Report
+          </Button>
+        </Stack>
+      </Box>
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
@@ -126,12 +282,8 @@ function Report() {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              InputLabelProps={{
-                shrink: true,
-              }}
-              InputProps={{
-                style: { backgroundColor: "#f5f5f5" },
-              }}
+              InputLabelProps={{ shrink: true }}
+              InputProps={{ style: { backgroundColor: "#f5f5f5" } }}
             />
           </Grid>
           <Grid item xs={12} md={3}>
@@ -141,57 +293,68 @@ function Report() {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              InputLabelProps={{
-                shrink: true,
-              }}
-              InputProps={{
-                style: { backgroundColor: "#f5f5f5" },
-              }}
+              InputLabelProps={{ shrink: true }}
+              InputProps={{ style: { backgroundColor: "#f5f5f5" } }}
             />
           </Grid>
-          {/* <Grid item xs={12} md={3}>
-            <TextField
-              select
-              fullWidth
-              label="Dealer"
-              value={isAdmin ? dealerId : user.uid}
-              onChange={(e) => {
-                setDealerId(e.target.value);
-              }}
-              sx={{ height: '56px' }}
-            >
-              {isAdmin ? (
-                <MenuItem value="none">None</MenuItem>
-              ) : (
-                <MenuItem value={user.uid}>{user.name}</MenuItem>
-              )}
-              {dealers.map((dealer) => (
-                <MenuItem key={dealer.id} value={dealer.uid}>
-                  {dealer.name}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid> */}
           <Grid item xs={12} md={4}>
+            {
+              isDealer ? (
+                <TextField
+                  select
+                  fullWidth
+                  label="Staff"
+                  value={staffItem}
+                  onChange={(e) => setStaffItem(e.target.value)}
+                  sx={{ height: '56px' }}
+                >
+                  <MenuItem value="onlydealer">Only Dealer</MenuItem>
+                  <MenuItem value="all">All</MenuItem>
+                  {isLoading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    staff.map((staffMember) => (
+                      <MenuItem key={staffMember.id} value={staffMember.uid}>
+                        {staffMember.name}
+                      </MenuItem>
+                    ))
+                  )}
+                </TextField>
+              ) : (
+                <TextField
+                  select
+                  fullWidth
+                  label="Staff"
+                  value={staffItem}
+                  onChange={(e) => setStaffItem(e.target.value)}
+                  sx={{ height: '56px' }}
+                >
+                  <MenuItem value={user.uid}>{user.name}</MenuItem>
+                </TextField>
+              )}
+          </Grid>
+          {/* <Grid item xs={12} md={2}>
             <TextField
               select
               fullWidth
               label="Staff"
               value={staffItem}
-              onChange={(e) => {
-                setStaffItem(e.target.value);
-              }}
+              onChange={(e) => setStaffItem(e.target.value)}
               sx={{ height: '56px' }}
             >
-              <MenuItem value="onlydealer">only dealer</MenuItem>
+              <MenuItem value="onlydealer">Only Dealer</MenuItem>
               <MenuItem value="all">All</MenuItem>
-              {isLoading ? <CircularProgress size={24} /> : staff.map((staffMember) => (
-                <MenuItem key={staffMember.id} value={staffMember.uid}>
-                  {staffMember.name}
-                </MenuItem>
-              ))}
+              {isLoading ? (
+                <CircularProgress size={24} />
+              ) : (
+                staff.map((staffMember) => (
+                  <MenuItem key={staffMember.id} value={staffMember.uid}>
+                    {staffMember.name}
+                  </MenuItem>
+                ))
+              )}
             </TextField>
-          </Grid>
+          </Grid> */}
           <Grid item xs={12} md={2}>
             <Button
               variant="contained"
@@ -201,9 +364,7 @@ function Report() {
               sx={{
                 height: '56px',
                 backgroundColor: colors.secondary,
-                '&:hover': {
-                  backgroundColor: colors.primary,
-                }
+                '&:hover': { backgroundColor: colors.primary }
               }}
             >
               {loading ? <CircularProgress size={24} /> : "Search"}
@@ -212,46 +373,53 @@ function Report() {
         </Grid>
       </Paper>
 
-      {/* {summary && (
+      {summary && (
         <Paper sx={{ padding: 3, marginBottom: 3 }} elevation={3}>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={3}>
-              <Typography variant="subtitle1" color="textSecondary">Total Amount</Typography>
-              <Typography variant="h6">Rs. {summary.totalAmount}</Typography>
+            <Grid item xs={12} sm={6} md={6}>
+              <Box sx={{ p: 2, backgroundColor: '#f8f9fa', borderRadius: 1 }}>
+                <Typography variant="subtitle1" color="textSecondary" gutterBottom>
+                  Total Invoices
+                </Typography>
+                <Typography variant="h6" color="primary">
+                  {summary.totalInvoices}
+                </Typography>
+              </Box>
             </Grid>
-            <Grid item xs={12} md={3}>
-              <Typography variant="subtitle1" color="textSecondary">Total Invoices</Typography>
-              <Typography variant="h6">{summary.totalInvoices}</Typography>
+            <Grid item xs={12} sm={6} md={6}>
+              <Box sx={{ p: 2, backgroundColor: '#f8f9fa', borderRadius: 1 }}>
+                <Typography variant="subtitle1" color="textSecondary" gutterBottom>
+                  Total Amount
+                </Typography>
+                <Typography variant="h6" color="primary">
+                  Rs. {summary.totalAmount}
+                </Typography>
+              </Box>
             </Grid>
-            <Grid item xs={12} md={3}>
-              <Typography variant="subtitle1" color="textSecondary">Paid Customers</Typography>
-              <Typography variant="h6">{summary.paidCount}</Typography>
+            {/* <Grid item xs={12} sm={6} md={3}>
+              <Box sx={{ p: 2, backgroundColor: '#f8f9fa', borderRadius: 1 }}>
+                <Typography variant="subtitle1" color="textSecondary" gutterBottom>
+                  Average Amount
+                </Typography>
+                <Typography variant="h6" color="primary">
+                  Rs. {summary.averageAmount}
+                </Typography>
+              </Box>
             </Grid>
-            <Grid item xs={12} md={3}>
-              <Typography variant="subtitle1" color="textSecondary">Due Customers</Typography>
-              <Typography variant="h6">{summary.dueCount}</Typography>
-            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Box sx={{ p: 2, backgroundColor: '#f8f9fa', borderRadius: 1 }}>
+                <Typography variant="subtitle1" color="textSecondary" gutterBottom>
+                  Unique Customers
+                </Typography>
+                <Typography variant="h6" color="primary">
+                  {summary.uniqueCustomers}
+                </Typography>
+              </Box>
+            </Grid> */}
           </Grid>
         </Paper>
-      )} */}
+      )}
 
-      {/* <Grid container spacing={2} mb={3} justifyContent="flex-end">
-        <Grid item>
-          <Button
-            variant="contained"
-            onClick={handleGenerateTestData}
-            disabled={generating || loading}
-            sx={{
-              backgroundColor: '#6b49e4',
-              '&:hover': {
-                backgroundColor: '#5438b3',
-              }
-            }}
-          >
-            {generating ? <CircularProgress size={24} /> : "Generate Test Data"}
-          </Button>
-        </Grid>
-      </Grid> */}
       {loading ? (
         <Box display="flex" justifyContent="center" p={3}>
           <CircularProgress />
@@ -266,35 +434,30 @@ function Report() {
             <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
               <TableRow>
                 <TableCell>Invoice No</TableCell>
+                <TableCell>Customer ID</TableCell>
                 <TableCell>Date</TableCell>
+                <TableCell>Time</TableCell>
                 <TableCell>Customer</TableCell>
+                <TableCell>Address</TableCell>
                 <TableCell>Package</TableCell>
+                <TableCell>Charged By</TableCell>
                 <TableCell align="right">Amount</TableCell>
-                <TableCell>Status</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {Array.isArray(invoices) && invoices.map((invoice) => (
                 <TableRow key={invoice?.id || invoice?.customerId || Math.random()}>
                   <TableCell>{invoice?.invoiceNumber || 'N/A'}</TableCell>
-                  <TableCell>{invoice?.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : 'N/A'}</TableCell>
+                  <TableCell>{invoice?.userName || 'N/A'}</TableCell>
+                  <TableCell>{invoice?.date ? new Date(invoice.date).toLocaleDateString() : 'N/A'}</TableCell>
+                  <TableCell>{invoice.time
+                    ? invoice.time.split(':').slice(0, 2).join(':') + ' ' + invoice.time.split(' ')[1]
+                    : 'N/A'}</TableCell>
                   <TableCell>{invoice?.customerName || 'N/A'}</TableCell>
-                  <TableCell>{invoice?.ispName || 'N/A'}</TableCell>
+                  <TableCell>{invoice?.address || 'N/A'}</TableCell>
+                  <TableCell>{invoice?.package || 'N/A'}</TableCell>
+                  <TableCell>{invoice?.chargedBy || 'N/A'}</TableCell>
                   <TableCell align="right">Rs. {invoice?.amount || 0}</TableCell>
-                  <TableCell>
-                    <Typography
-                      component="span"
-                      sx={{
-                        px: 2,
-                        py: 0.5,
-                        borderRadius: 1,
-                        backgroundColor: invoice?.status === 'paid' ? '#e8f5e9' : '#ffebee',
-                        color: invoice?.status === 'paid' ? '#2e7d32' : '#c62828'
-                      }}
-                    >
-                      {invoice?.status === 'paid' ? 'Paid' : 'Due'}
-                    </Typography>
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

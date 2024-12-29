@@ -23,6 +23,10 @@ import {
     Edit,
     Save,
     Cancel,
+    Home,
+    Lock,
+    VpnKey,
+    Work,
     Business
 } from '@mui/icons-material';
 import { useTheme } from '@mui/system';
@@ -188,7 +192,6 @@ const UserProfile = () => {
 
                         <Grid item xs={12} sm={3} display="flex" justifyContent="center">
                             <ListItem>
-
                                 <ListItemIcon>
                                     <Email sx={{ color: colors.primary }} />
                                 </ListItemIcon>
@@ -211,9 +214,9 @@ const UserProfile = () => {
                                 )}
                             </ListItem>
                         </Grid>
+
                         <Grid item xs={12} sm={3} display="flex" justifyContent="center">
                             <ListItem>
-
                                 <ListItemIcon>
                                     <Phone sx={{ color: colors.primary }} />
                                 </ListItemIcon>
@@ -235,11 +238,11 @@ const UserProfile = () => {
                                 )}
                             </ListItem>
                         </Grid>
+
                         <Grid item xs={12} sm={3} display="flex" justifyContent="center">
                             <ListItem>
-
                                 <ListItemIcon>
-                                    <Phone sx={{ color: colors.primary }} />
+                                    <Home sx={{ color: colors.primary }} />
                                 </ListItemIcon>
                                 {isEditing ? (
                                     <TextField
@@ -259,13 +262,13 @@ const UserProfile = () => {
                                 )}
                             </ListItem>
                         </Grid>
-                        <Grid item xs={12} sm={3} display="flex" justifyContent="center">
-                            <ListItem>
 
-                                <ListItemIcon>
-                                    <Phone sx={{ color: colors.primary }} />
-                                </ListItemIcon>
-                                {isEditing && (
+                        {isEditing && (
+                            <Grid item xs={12} sm={3} display="flex" justifyContent="center">
+                                <ListItem>
+                                    <ListItemIcon>
+                                        <Lock sx={{ color: colors.primary }} />
+                                    </ListItemIcon>
                                     <TextField
                                         fullWidth
                                         label="Current Password"
@@ -274,16 +277,16 @@ const UserProfile = () => {
                                         variant="outlined"
                                         size="small"
                                     />
-                                )}
-                            </ListItem>
-                        </Grid>
-                        <Grid item xs={12} sm={3} display="flex" justifyContent="center">
-                            <ListItem>
+                                </ListItem>
+                            </Grid>
+                        )}
 
-                                <ListItemIcon>
-                                    <Phone sx={{ color: colors.primary }} />
-                                </ListItemIcon>
-                                {isEditing && (
+                        {isEditing && (
+                            <Grid item xs={12} sm={3} display="flex" justifyContent="center">
+                                <ListItem>
+                                    <ListItemIcon>
+                                        <VpnKey sx={{ color: colors.primary }} />
+                                    </ListItemIcon>
                                     <TextField
                                         fullWidth
                                         label="New Password"
@@ -292,64 +295,60 @@ const UserProfile = () => {
                                         variant="outlined"
                                         size="small"
                                     />
-                                )}
-                            </ListItem>
-                        </Grid>
-                        {user.role === 'staff' && (
-                            <>
-                                <Grid item xs={12} sm={3} display="flex" justifyContent="center">
-                                    <ListItem>
+                                </ListItem>
+                            </Grid>
+                        )}
 
-                                        <ListItemIcon>
-                                            <Badge sx={{ color: colors.primary }} />
-                                        </ListItemIcon>
-                                        {isEditing ? (
-                                            <TextField
-                                                fullWidth
-                                                label="Designation"
-                                                value={editedUser.designation}
-                                                onChange={handleInputChange('designation')}
-                                                variant="outlined"
-                                                size="small"
-                                            />
-                                        ) : (
-                                            <ListItemText
-                                                primary="Designation"
-                                                secondary={user.designation}
-                                                secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
-                                            />
-                                        )}
-                                    </ListItem>
-                                </Grid>
-                            </>
+                        {user.role === 'staff' && (
+                            <Grid item xs={12} sm={3} display="flex" justifyContent="center">
+                                <ListItem>
+                                    <ListItemIcon>
+                                        <Work sx={{ color: colors.primary }} />
+                                    </ListItemIcon>
+                                    {isEditing ? (
+                                        <TextField
+                                            fullWidth
+                                            label="Designation"
+                                            value={editedUser.designation}
+                                            onChange={handleInputChange('designation')}
+                                            variant="outlined"
+                                            size="small"
+                                        />
+                                    ) : (
+                                        <ListItemText
+                                            primary="Designation"
+                                            secondary={user.designation}
+                                            secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
+                                        />
+                                    )}
+                                </ListItem>
+                            </Grid>
                         )}
 
                         {user.role === 'dealer' && (
-                            <>
-                                <Grid item xs={12} sm={3} display="flex" justifyContent="center">
-                                    <ListItem>
-                                        <ListItemIcon>
-                                            <Business sx={{ color: colors.primary }} />
-                                        </ListItemIcon>
-                                        {isEditing ? (
-                                            <TextField
-                                                fullWidth
-                                                label="Company Code"
-                                                value={editedUser.companyCode}
-                                                onChange={handleInputChange('companyCode')}
-                                                variant="outlined"
-                                                size="small"
-                                            />
-                                        ) : (
-                                            <ListItemText
-                                                primary="Company Code"
-                                                secondary={user.companyCode}
-                                                secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
-                                            />
-                                        )}
-                                    </ListItem>
-                                </Grid>
-                            </>
+                            <Grid item xs={12} sm={3} display="flex" justifyContent="center">
+                                <ListItem>
+                                    <ListItemIcon>
+                                        <Business sx={{ color: colors.primary }} />
+                                    </ListItemIcon>
+                                    {isEditing ? (
+                                        <TextField
+                                            fullWidth
+                                            label="Company Code"
+                                            value={editedUser.companyCode}
+                                            onChange={handleInputChange('companyCode')}
+                                            variant="outlined"
+                                            size="small"
+                                        />
+                                    ) : (
+                                        <ListItemText
+                                            primary="Company Code"
+                                            secondary={user.companyCode}
+                                            secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
+                                        />
+                                    )}
+                                </ListItem>
+                            </Grid>
                         )}
                     </List>
                     {passwordError && (
