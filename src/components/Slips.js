@@ -36,7 +36,13 @@ const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
                     color: green[700],
                     mt: 1,
                 }}>
-                    <Typography variant="body2" color="textPrimary"> {new Date(receiptData.date).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' })}</Typography>
+                    <Typography variant="body2" color="textPrimary"> 
+                        {new Date(receiptData.date).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' })}
+                        &nbsp;
+                        {receiptData.time
+                        ? receiptData.time.split(':').slice(0, 2).join(':') + ' ' + receiptData.time.split(' ')[1]
+                        : 'N/A'}
+                    </Typography>
                 </Box>
             </Box>
 
@@ -105,21 +111,18 @@ const PrintableReceipt = React.forwardRef(({ receiptData }, ref) => (
             </Grid>
             <Grid container justifyContent="space-between" mb={1}>
                 <Typography variant="body2" color="#6b49e4">
-                    Time
-                </Typography>
-                <Typography variant="body2" color="textPrimary">
-                    {receiptData.time
-                        ? receiptData.time.split(':').slice(0, 2).join(':') + ' ' + receiptData.time.split(' ')[1]
-                        : 'N/A'}
-                </Typography>
-            </Grid>
-            <Grid container justifyContent="space-between" mb={1}>
-                <Typography variant="body2" color="#6b49e4">
                     Phone
                 </Typography>
-                <Typography variant="body2" color="textPrimary">
-                    {receiptData.phone1}
-                    {receiptData.userPhone && `, ${receiptData.userPhone}`}
+                <Typography variant="body2" display="inline-block" color="textPrimary">
+                    {receiptData.dealerPhone && ` ${receiptData.dealerPhone}`}
+                </Typography>
+                </Grid>
+            <Grid container justifyContent="space-between" mb={1}>
+                <Typography variant="body2" color="#6b49e4">
+                    Phone 2
+                </Typography>
+                <Typography variant="body2" display="inline-block" color="textPrimary">
+                    {receiptData.dealerPhone2 && ` ${receiptData.dealerPhone2}`}    
                 </Typography>
             </Grid>
         </Paper>
@@ -140,10 +143,10 @@ const Slips = () => {
     const [address, setAddress] = useState('');
     const [phone, setPhone] = useState('');
     const chargedBy = useSelector((state) => state.auth.user.name);
-    const userPhone = useSelector((state) => state.auth.user.phone);
     const [error, setError] = useState('');
     const [fieldErrors, setFieldErrors] = useState({});
-
+    const dealerPhone = useSelector((state) => state.auth.user.dealerPhone);
+    const dealerPhone2 = useSelector((state) => state.auth.user.dealerPhone2);
     const dispatch = useDispatch();
     const dealerId = useSelector((state) => state.auth.user.uid);
     const userId = useSelector((state) => state.auth.user.uid);
@@ -307,9 +310,10 @@ const Slips = () => {
         amount,
         month,
         address,
-        userPhone,
         time,
-        phone
+        phone,
+        dealerPhone,
+        dealerPhone2
     };
 
     const handleSearchFormSubmit = (e) => {
@@ -465,20 +469,28 @@ const Slips = () => {
                         </Grid>
                         <Grid item xs={12} sm={6}>
                             <TextField
+                                label="Dealer Phone"
+                                value={dealerPhone}
+                                fullWidth
+                                sx={{ mb: 2 }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                label="Dealer Phone 2"
+                                value={dealerPhone2}
+                                fullWidth
+                                sx={{ mb: 2 }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
                                 label="Charged By"
                                 value={chargedBy}
                                 fullWidth
                                 sx={{ mb: 2 }}
                             />
                         </Grid>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            label="phone"
-                            value={userPhone}
-                            fullWidth
-                            sx={{ mb: 2 }}
-                        />
                     </Grid>
                     {/* </Grid> */}
                     <Grid item xs={12}>

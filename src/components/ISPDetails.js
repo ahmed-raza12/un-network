@@ -363,6 +363,11 @@ function ISPDetails() {
                                 Create Package
                             </Button>
                         </Box>
+                        <Box sx={{ width: '100%', textAlign: 'center' }}>
+                            <Typography variant="h6" sx={{ color: colors.secondary, mb: 1 }}>
+                              {isp.name}'s Packages
+                            </Typography>
+                        </Box>
                         {loading ? (
                             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
                                 <CircularProgress />

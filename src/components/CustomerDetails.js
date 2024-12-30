@@ -473,6 +473,15 @@ function CustomerDetails() {
             {
                 tabValue === 1 && (
                     <Box sx={{ mt: 3 }}>
+                        {
+                            customer?.userName && (
+                                <Box display="flex" justifyContent="center" alignItems="center" mb={2}>
+                                    <Typography variant="h6" fontWeight="bold" align='center' color={colors.secondary}>
+                                            {customer?.userName}'s Invoices
+                                    </Typography>
+                                </Box>
+                            )
+                        }
                         <TableContainer component={Paper}>
                             <Table sx={{ '& .MuiTableCell-root': { borderRight: '1px solid rgba(224, 224, 224, 1)' } }}>
                                 <TableHead sx={{ backgroundColor: "#f5f5f5" }}>

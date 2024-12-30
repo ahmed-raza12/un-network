@@ -51,6 +51,7 @@ const PrintUserSlip = React.forwardRef(({ data }, ref) => (
 ));
 
 const PrintableQuickSlip = React.forwardRef(({ data }, ref) => (
+    console.log(data),
     <div ref={ref}>
         <Paper
             elevation={0}
@@ -77,8 +78,14 @@ const PrintableQuickSlip = React.forwardRef(({ data }, ref) => (
                     color: green[700],
                     mt: 1,
                 }}>
-                    <Typography variant="body2" color="textPrimary"> {new Date(data.date).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' })}</Typography>
-                </Box>
+
+                    <Typography variant="body2" color="textPrimary">
+                        {new Date(data.date).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' })}
+                        &nbsp;
+                        {data.time
+                            ? data.time.split(':').slice(0, 2).join(':') + ' ' + data.time.split(' ')[1]
+                            : 'N/A'}
+                    </Typography>                </Box>
             </Box>
             <Box textAlign="left" mt={3}>
                 <Typography mb={0.5} variant="h6" fontWeight="bold" color="textPrimary">
@@ -121,12 +128,18 @@ const PrintableQuickSlip = React.forwardRef(({ data }, ref) => (
             </Grid>
             <Grid container justifyContent="space-between" mb={1}>
                 <Typography variant="body2" color="#6b49e4">
-                    Time
+                    Phone
                 </Typography>
-                <Typography variant="body2" color="textPrimary">
-                    {data.time
-                        ? data.time.split(':').slice(0, 2).join(':') + ' ' + data.time.split(' ')[1]
-                        : 'N/A'}
+                <Typography variant="body2" display="inline-block" color="textPrimary">
+                    {data.dealerPhone && ` ${data.dealerPhone}`}
+                </Typography>
+                </Grid>
+            <Grid container justifyContent="space-between" mb={1}>
+                <Typography variant="body2" color="#6b49e4">
+                    Phone 2
+                </Typography>
+                <Typography variant="body2" display="inline-block" color="textPrimary">
+                    {data.dealerPhone2 && ` ${data.dealerPhone2}`}    
                 </Typography>
             </Grid>
         </Paper>
@@ -138,6 +151,8 @@ const PrintableQuickSlip = React.forwardRef(({ data }, ref) => (
 
 const ManualSlip = () => {
     const chargedBy = useSelector((state) => state.auth.user.name);
+    const dealerPhone = useSelector((state) => state.auth.user.dealerPhone);
+    const dealerPhone2 = useSelector((state) => state.auth.user.dealerPhone2);
     const [formData, setFormData] = useState({
         date: new Date().toISOString().split('T')[0], // Default to today's date
         customerUserName: '',
@@ -147,6 +162,8 @@ const ManualSlip = () => {
         package: '',
         amount: '',
         chargedBy,
+        dealerPhone,
+        dealerPhone2,
         time: new Date().toLocaleTimeString(),
         month: new Date().toISOString().slice(0, 7) // Default to current month in YYYY-MM format
     });

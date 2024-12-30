@@ -84,6 +84,8 @@ const UserProfile = () => {
             const credential = EmailAuthProvider.credential(user.email, currentPassword);
             await reauthenticateWithCredential(user, credential);
             updatePassword(user, newPassword);
+            setEditedUser({ ...editedUser, password: newPassword });
+            dispatch(updateProfile(editedUser));
             alert("Password updated successfully!");
             setIsEditing(false);
             dispatch(updateProfile(editedUser));
@@ -214,30 +216,82 @@ const UserProfile = () => {
                                 )}
                             </ListItem>
                         </Grid>
-
-                        <Grid item xs={12} sm={3} display="flex" justifyContent="center">
-                            <ListItem>
-                                <ListItemIcon>
-                                    <Phone sx={{ color: colors.primary }} />
-                                </ListItemIcon>
-                                {isEditing ? (
-                                    <TextField
-                                        fullWidth
-                                        label="Phone"
-                                        value={editedUser.phone}
-                                        onChange={handleInputChange('phone')}
-                                        variant="outlined"
-                                        size="small"
-                                    />
-                                ) : (
-                                    <ListItemText
-                                        primary="Phone"
-                                        secondary={user.phone}
-                                        secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
-                                    />
-                                )}
-                            </ListItem>
-                        </Grid>
+                        {
+                            user.role === 'dealer' ? (
+                                <Grid container spacing={2}>
+                                    <Grid item xs={12} sm={3} md={8} display="flex" justifyContent="center">
+                                        <ListItem>
+                                            <ListItemIcon>
+                                                <Phone sx={{ color: colors.primary }} />
+                                            </ListItemIcon>
+                                            {isEditing ? (
+                                                <TextField
+                                                    fullWidth
+                                                    label="Phone"
+                                                    value={editedUser.dealerPhone}
+                                                    onChange={handleInputChange('dealerPhone')}
+                                                    variant="outlined"
+                                                    size="small"
+                                                />
+                                            ) : (
+                                                <ListItemText
+                                                    primary="Phone"
+                                                    secondary={user.dealerPhone}
+                                                    secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
+                                                />
+                                            )}
+                                        </ListItem>
+                                    </Grid>
+                                    <Grid item xs={12} sm={3} md={8} display="flex" justifyContent="center">
+                                        <ListItem>
+                                            <ListItemIcon>
+                                                <Phone sx={{ color: colors.primary }} />
+                                            </ListItemIcon>
+                                            {isEditing ? (
+                                                <TextField
+                                                    fullWidth
+                                                    label="Phone2"
+                                                    value={editedUser.dealerPhone2}
+                                                    onChange={handleInputChange('dealerPhone2')}
+                                                    variant="outlined"
+                                                    size="small"
+                                                />
+                                            ) : (
+                                                <ListItemText
+                                                    primary="Phone2"
+                                                    secondary={user.phone2}
+                                                    secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
+                                                />
+                                            )}
+                                        </ListItem>
+                                    </Grid>
+                                </Grid>
+                            ) : (
+                                <Grid item xs={12} sm={3} display="flex" justifyContent="center">
+                                    <ListItem>
+                                        <ListItemIcon>
+                                            <Phone sx={{ color: colors.primary }} />
+                                        </ListItemIcon>
+                                        {isEditing ? (
+                                            <TextField
+                                                fullWidth
+                                                label="Phone"
+                                                value={editedUser.phone}
+                                                onChange={handleInputChange('phone')}
+                                                variant="outlined"
+                                                size="small"
+                                            />
+                                        ) : (
+                                            <ListItemText
+                                                primary="Phone"
+                                                secondary={user.phone}
+                                                secondaryTypographyProps={{ color: colors.primary, fontWeight: 'bold' }}
+                                            />
+                                        )}
+                                    </ListItem>
+                                </Grid>
+                            )
+                        }
 
                         <Grid item xs={12} sm={3} display="flex" justifyContent="center">
                             <ListItem>

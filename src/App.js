@@ -59,7 +59,7 @@ const App = () => {
   const dispatch = useDispatch();
   const isLoggedIn = useSelector(state => state.auth.isLoggedIn); // Get login status from Redux state
 
-  useTabCloseHandler();
+  // useTabCloseHandler();
   const handleLogout = () => {
     dispatch(logout()); // Dispatch logout action
     // Optionally, you can also sign out from Firebase
